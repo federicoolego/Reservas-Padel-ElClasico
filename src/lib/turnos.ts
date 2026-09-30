@@ -49,6 +49,7 @@ export async function cambiarEstado(
   })
   if (error) {
     if (error.code === '28000') throw new SesionVencida(error.message)
+    if (error.code === '22023') throw new Error(error.message) // fecha fuera del rango permitido
     throw new Error('No se pudo guardar el cambio. Revisá la conexión.')
   }
   return data as Turno

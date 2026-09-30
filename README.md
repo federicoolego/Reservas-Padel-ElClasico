@@ -12,6 +12,13 @@ Stack: Vite + React + TypeScript + Tailwind + Supabase. Publicada con GitHub Pag
 
 En el proyecto de Supabase, abrí **SQL Editor** y corré `supabase/reservas.sql` una sola vez.
 Crea tablas y funciones con prefijo `reservas_`; no toca nada de la app de torneos.
+Después corré las migraciones de `supabase/` en orden (`migracion-001-limites.sql`, …).
+
+## Rango de fechas y limpieza
+
+Se pueden ver y cargar turnos desde hoy - 90 días hasta hoy + 60 días. Lo más viejo que 90 días
+se borra solo cada vez que alguien cambia un turno. Para cambiar el rango, editá los dos lugares:
+`src/config/limites.ts` (la app) y `public.reservas_limites()` en `migracion-001-limites.sql` (la base).
 
 ## 2. Publicar
 
