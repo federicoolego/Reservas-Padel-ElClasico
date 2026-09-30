@@ -9,6 +9,7 @@ import Login from './pages/Login'
 import SelectorFecha from './components/SelectorFecha'
 import TablaTurnos from './components/TablaTurnos'
 import VistaImagen from './components/VistaImagen'
+import Ayuda from './components/Ayuda'
 
 type Pestana = 'turnos' | 'imagen'
 const CLAVE_VISTA = 'clasico-reservas:vista:v1'
@@ -67,6 +68,7 @@ export default function App() {
 function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () => void; alVencer: () => void }) {
   const [vista, setVista] = useState(vistaGuardada)
   const [fecha, setFecha] = useState(hoyISO)
+  const [ayuda, setAyuda] = useState(false)
   const complejo = complejoPorId(vista.complejo)
   const { turnos, cargando, error, recargar, aplicarLocal } = useTurnos(fecha, complejo.id)
 
@@ -81,6 +83,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
           <img src={logoUrl()} alt="" className="h-11 w-auto" />
           <h1 className="flex-1 font-tablero text-3xl font-extrabold tracking-wide">Turnos</h1>
           <span className="hidden text-sm text-white/70 sm:inline">{sesion.nombre || sesion.usuario}</span>
+          <button onClick={() => setAyuda(true)} className="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold">Ayuda</button>
           <button onClick={alSalir} className="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold">Salir</button>
         </div>
         {/* módulos */}
@@ -129,6 +132,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
           <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} />
         )}
       </main>
+      {ayuda && <Ayuda alCerrar={() => setAyuda(false)} />}
     </div>
   )
 }
