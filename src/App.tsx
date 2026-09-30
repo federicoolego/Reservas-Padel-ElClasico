@@ -129,7 +129,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
           <TablaTurnos complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token}
             aplicarLocal={aplicarLocal} alVencerSesion={alVencer} />
         ) : (
-          <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} />
+          <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token} alVencerSesion={alVencer} />
         )}
       </main>
       {ayuda && <Ayuda alCerrar={() => setAyuda(false)} />}

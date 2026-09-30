@@ -1,12 +1,8 @@
-// Configuración de complejos, canchas, horarios y contactos.
+// Configuración de complejos, canchas y horarios.
 // Para sumar/renombrar una cancha o cambiar un horario, se edita solo este archivo.
+// Los contactos de la imagen se editan desde la app (tabla reservas_contactos).
 
 export type ComplejoId = 'el-clasico' | 'el-clasico-2'
-
-export interface Contacto {
-  nombre: string
-  telefono: string
-}
 
 export interface Complejo {
   id: ComplejoId
@@ -14,7 +10,6 @@ export interface Complejo {
   tituloImagen: string      // segunda línea del título de la imagen
   canchas: string[]         // el orden es el de las columnas
   horarios: string[]        // HH:MM
-  contactos: Contacto[]
   estilo: 'cesped' | 'noche' // diseño de la imagen
 }
 
@@ -27,10 +22,6 @@ export const COMPLEJOS: Complejo[] = [
     tituloImagen: 'EL CLÁSICO',
     canchas: ['BX1', 'BX2', 'C1'],
     horarios: HORARIOS,
-    contactos: [
-      { nombre: 'UMA', telefono: '3407430502' },
-      { nombre: 'RONAL', telefono: '3407669370' },
-    ],
     estilo: 'cesped',
   },
   {
@@ -39,11 +30,6 @@ export const COMPLEJOS: Complejo[] = [
     tituloImagen: 'EL CLÁSICO 2',
     canchas: ['Cancha 1'],
     horarios: HORARIOS,
-    contactos: [
-      { nombre: 'EL CLÁSICO', telefono: '3407492700' },
-      { nombre: 'FABRI', telefono: '3407444638' },
-      { nombre: 'UMA', telefono: '3407430502' },
-    ],
     estilo: 'noche',
   },
 ]

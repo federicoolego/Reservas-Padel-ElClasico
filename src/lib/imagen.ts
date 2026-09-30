@@ -2,6 +2,11 @@ import type { Complejo } from '../config/complejos'
 import { claveTurno, type MapaTurnos } from './turnos'
 import { fechaLarga } from './fechas'
 
+export interface ContactoImagen {
+  nombre: string
+  telefono: string
+}
+
 // Imagen vertical pensada para WhatsApp (estado o chat)
 const ANCHO = 1080
 const ALTO = 1700
@@ -237,7 +242,7 @@ function fondoNoche(ctx: CanvasRenderingContext2D) {
   ctx.strokeRect(38, 38, ANCHO - 76, ALTO - 76)
 }
 
-function dibujarNoche(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null) {
+function dibujarNoche(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
   fondoNoche(ctx)
   texto(ctx, 'TURNOS PÁDEL', ANCHO / 2, 125, 92)
   texto(ctx, c.tituloImagen, ANCHO / 2, 218, 92)
@@ -272,8 +277,8 @@ function dibujarNoche(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string,
       if (turnos[claveTurno(cancha, h)]?.estado === 'reservada') cruz(ctx, ANCHO / 2, y, paso * 0.5)
     }
   }
-  pieContactos(ctx, c, 'lados')
-  marcaDeAgua(ctx, ALTO - 64)
+  pieContactos(ctx, contactos, 'lados')
+  marcaDeAgua(ctx, ALTO - 60)
 }
 
 // ---------------------------------------------------------------------
@@ -391,49 +396,60 @@ function dibujarColumnas(
   })
 }
 
-function dibujarCesped(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null) {
+function dibujarCesped(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
   fondoCesped(ctx)
   texto(ctx, 'TURNOS DE PÁDEL', ANCHO / 2, 115, 104)
   texto(ctx, c.tituloImagen, ANCHO / 2, 215, 84)
   lineaFecha(ctx, fecha, 292)
   iconoCancha(ctx, ANCHO / 2, 385)
   const top = 470
-  dibujarColumnas(ctx, c, turnos, logo, top, ALTO - 250 - top, 'pelota')
-  pieContactos(ctx, c, 'centro')
+  // el pie crece con la cantidad de contactos y las columnas se ajustan al espacio que queda
+  const altoPie = contactos.length ? 70 + PASO_PIE_CENTRO * contactos.length : 60
+  dibujarColumnas(ctx, c, turnos, logo, top, ALTO - altoPie - 30 - top, 'pelota')
+  pieContactos(ctx, contactos, 'centro')
   marcaDeAgua(ctx)
 }
 
 // ---------------------------------------------------------------------
-function pieContactos(ctx: CanvasRenderingContext2D, c: Complejo, modo: 'lados' | 'centro') {
-  const lineas = c.contactos
+const PASO_PIE_CENTRO = 60
+
+function pieContactos(ctx: CanvasRenderingContext2D, lista: ContactoImagen[], modo: 'lados' | 'centro') {
+  const lineas = lista.map((c) => ({ nombre: c.nombre.toUpperCase(), telefono: c.telefono }))
   if (!lineas.length) return
   if (modo === 'centro' || lineas.length === 1) {
-    const paso = 62
-    const y0 = ALTO - 90 - paso * (lineas.length - 1) - 20
-    lineas.forEach((ct, i) => texto(ctx, `${ct.nombre}: ${ct.telefono}`, ANCHO / 2, y0 + paso * i, 60))
+    const paso = PASO_PIE_CENTRO
+    const tam = lineas.length > 2 ? 52 : 60
+    const y0 = ALTO - 95 - paso * (lineas.length - 1)
+    lineas.forEach((ct, i) => {
+      const t = `${ct.nombre}: ${ct.telefono}`
+      texto(ctx, t, ANCHO / 2, y0 + paso * i, tamQueEntra(ctx, t, tam, ANCHO - 160))
+    })
     return
   }
-  // el primero a la izquierda y el resto apilado a la derecha (como la imagen original)
-  const [izq, ...der] = lineas
+  // Como la imagen original: con 3 contactos, 1 a la izquierda y 2 apilados a la derecha.
+  // En general, la mitad (redondeando para abajo) a la izquierda y el resto a la derecha.
+  const corte = Math.floor(lineas.length / 2)
+  const bloques = [lineas.slice(0, corte), lineas.slice(corte)]
+  const tam = 40
+  const salto = 44
   const yc = ALTO - 150
-  const tam = 42
-  const salto = 46
-  texto(ctx, `${izq.nombre}:`, 260, yc - salto / 2, tam)
-  texto(ctx, izq.telefono, 260, yc + salto / 2, tam)
-  const filas = der.flatMap((ct) => [ct.nombre, ct.telefono])
-  const y0 = yc - (salto * (filas.length - 1)) / 2
-  filas.forEach((f, k) => texto(ctx, f, ANCHO - 260, y0 + salto * k, tam))
+  bloques.forEach((bloque, lado) => {
+    const x = lado === 0 ? 260 : ANCHO - 260
+    const filas = bloque.flatMap((ct) => [bloque.length === 1 && lado === 0 ? `${ct.nombre}:` : ct.nombre, ct.telefono])
+    const y0 = yc - (salto * (filas.length - 1)) / 2
+    filas.forEach((f, k) => texto(ctx, f, x, y0 + salto * k, tamQueEntra(ctx, f, tam, 380)))
+  })
 }
 
-export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos): Promise<Blob> {
+export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos, contactos: ContactoImagen[]): Promise<Blob> {
   await prepararFuentes()
   const logo = await cargarImagen(`${import.meta.env.BASE_URL}logo-el-clasico.webp`).catch(() => null)
   const canvas = document.createElement('canvas')
   canvas.width = ANCHO
   canvas.height = ALTO
   const ctx = canvas.getContext('2d')!
-  if (c.estilo === 'cesped') dibujarCesped(ctx, c, fecha, turnos, logo)
-  else dibujarNoche(ctx, c, fecha, turnos, logo)
+  if (c.estilo === 'cesped') dibujarCesped(ctx, c, fecha, turnos, logo, contactos)
+  else dibujarNoche(ctx, c, fecha, turnos, logo, contactos)
   return new Promise((ok, mal) => canvas.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo generar la imagen'))), 'image/png'))
 }
 

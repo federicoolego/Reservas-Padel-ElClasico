@@ -2,18 +2,30 @@ import { useEffect, useState } from 'react'
 import type { Complejo } from '../config/complejos'
 import type { MapaTurnos } from '../lib/turnos'
 import { generarImagen, nombreArchivo } from '../lib/imagen'
+import { useContactos } from '../lib/contactos'
+import EditorContactos from './EditorContactos'
 
-export default function VistaImagen({ complejo, fecha, turnos }: { complejo: Complejo; fecha: string; turnos: MapaTurnos }) {
+interface Props {
+  complejo: Complejo
+  fecha: string
+  turnos: MapaTurnos
+  token: string
+  alVencerSesion: () => void
+}
+
+export default function VistaImagen({ complejo, fecha, turnos, token, alVencerSesion }: Props) {
+  const { contactos, cargado, recargar } = useContactos(complejo.id)
   const [blob, setBlob] = useState<Blob | null>(null)
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Se regenera sola cada vez que cambia un turno (también si lo cambia otra persona)
+  // Se regenera sola cada vez que cambia un turno o un contacto (también si lo cambia otra persona)
   useEffect(() => {
+    if (!cargado) return
     let vigente = true
     const t = window.setTimeout(async () => {
       try {
-        const b = await generarImagen(complejo, fecha, turnos)
+        const b = await generarImagen(complejo, fecha, turnos, contactos)
         if (!vigente) return
         setBlob(b)
         setUrl((prev) => {
@@ -29,7 +41,7 @@ export default function VistaImagen({ complejo, fecha, turnos }: { complejo: Com
       vigente = false
       window.clearTimeout(t)
     }
-  }, [complejo, fecha, turnos])
+  }, [complejo, fecha, turnos, contactos, cargado])
 
   useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
 
@@ -67,6 +79,7 @@ export default function VistaImagen({ complejo, fecha, turnos }: { complejo: Com
         </button>
       </div>
       {error && <p className="text-sm font-medium text-rojo">{error}</p>}
+      <EditorContactos complejo={complejo} contactos={contactos} token={token} recargar={recargar} alVencerSesion={alVencerSesion} />
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-noche/5 shadow-xl">
         {url ? (
           <img src={url} alt={`Turnos de ${complejo.nombre}`} className="block w-full" />

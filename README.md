@@ -30,7 +30,8 @@ Queda en `https://federicoolego.github.io/Reservas-Padel-Clasico/`.
 
 ## Cambiar canchas, horarios o teléfonos
 
-Todo está en `src/config/complejos.ts`.
+Canchas y horarios están en `src/config/complejos.ts`. Los teléfonos de la imagen se editan desde la app
+(pestaña Imagen → Contactos de la imagen) y se guardan en `reservas_contactos` (migración 002).
 
 ## Cambiar la contraseña
 

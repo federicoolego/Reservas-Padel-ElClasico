@@ -74,6 +74,11 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
             <p>En el celu, tocá {b('Compartir por WhatsApp')} y elegí el chat o el estado. En la compu, tocá {b('Descargar imagen')} y arrastrala a WhatsApp Web.</p>
           </Seccion>
 
+          <Seccion titulo="Contactos de la imagen">
+            <p>Los teléfonos del pie de la imagen se editan en la pestaña {b('Imagen')}, tocando {b('Contactos de la imagen')}. Ahí podés agregar, editar, eliminar y cambiar el orden con las flechas ↑ ↓.</p>
+            <p>Cada complejo tiene sus propios contactos, hasta 4. El orden de la lista es el de la imagen, y los cambios se ven al instante en todos los dispositivos.</p>
+          </Seccion>
+
           <Seccion titulo="Qué fechas se pueden usar">
             <p>Se pueden ver y cargar turnos desde {DIAS_HISTORIA} días atrás hasta {DIAS_ADELANTE} días adelante. Hoy eso es del {b(desde)} al {b(hasta)}. El rango se corre solo cada día.</p>
             <p>Fuera de ese rango, las flechas se desactivan y el calendario no deja elegir la fecha.</p>
