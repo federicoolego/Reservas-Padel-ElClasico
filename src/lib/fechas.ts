@@ -28,3 +28,15 @@ export function fechaLarga(iso: string): string {
 export function horaDe(ts: string): string {
   return new Intl.DateTimeFormat('es-AR', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ts))
 }
+
+/** "30/09" */
+export const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
+
+/** HOY / AYER / MAÑANA según la fecha de hoy en Argentina, o null para cualquier otro día */
+export function etiquetaRelativa(iso: string): 'HOY' | 'AYER' | 'MAÑANA' | null {
+  const hoy = hoyISO()
+  if (iso === hoy) return 'HOY'
+  if (iso === sumarDias(hoy, -1)) return 'AYER'
+  if (iso === sumarDias(hoy, 1)) return 'MAÑANA'
+  return null
+}

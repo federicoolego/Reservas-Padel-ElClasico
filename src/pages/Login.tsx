@@ -12,6 +12,10 @@ export default function Login({ alIngresar }: { alIngresar: (s: Sesion) => void 
   async function enviar(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!nombre.trim()) {
+      setError('Poné tu nombre: queda registrado en cada turno que cambies.')
+      return
+    }
     setEnviando(true)
     try {
       alIngresar(await ingresar(usuario, clave, nombre))
@@ -45,8 +49,8 @@ export default function Login({ alIngresar }: { alIngresar: (s: Sesion) => void 
         <label className="block">
           <span className="text-sm font-semibold">Tu nombre</span>
           <input className={`${campo} mt-1`} value={nombre} onChange={(e) => setNombre(e.target.value)}
-            maxLength={30} placeholder="Ej: Uma" autoComplete="given-name" />
-          <span className="mt-1 block text-xs text-tinta">Opcional. Queda registrado en cada turno que cambies.</span>
+            maxLength={30} placeholder="Ej: Uma" autoComplete="given-name" required />
+          <span className="mt-1 block text-xs text-tinta">Queda registrado en cada turno que cambies.</span>
         </label>
         {error && <p className="rounded-lg bg-rojo/10 px-3 py-2 text-sm font-medium text-rojo">{error}</p>}
         <button type="submit" disabled={enviando}

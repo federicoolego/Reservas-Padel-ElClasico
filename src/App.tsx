@@ -12,18 +12,19 @@ import VistaImagen from './components/VistaImagen'
 import Ayuda from './components/Ayuda'
 
 type Pestana = 'turnos' | 'imagen'
-const CLAVE_VISTA = 'clasico-reservas:vista:v1'
-
-function vistaGuardada(): { complejo: ComplejoId; pestana: Pestana } {
-  try {
-    const v = JSON.parse(localStorage.getItem(CLAVE_VISTA) ?? '')
-    if (COMPLEJOS.some((c) => c.id === v.complejo) && (v.pestana === 'turnos' || v.pestana === 'imagen')) return v
-  } catch { /* primera vez */ }
-  return { complejo: COMPLEJOS[0].id, pestana: 'turnos' }
-}
+// Siempre arranca en El Clásico, pestaña Turnos, día de hoy
+const VISTA_INICIAL: { complejo: ComplejoId; pestana: Pestana } = { complejo: COMPLEJOS[0].id, pestana: 'turnos' }
 
 export default function App() {
-  const [sesion, setSesion] = useState<Sesion | null>(() => leerSesion())
+  // Las sesiones sin nombre (anteriores a que fuera obligatorio) vuelven a pedir login
+  const [sesion, setSesion] = useState<Sesion | null>(() => {
+    const s = leerSesion()
+    if (s && !s.nombre) {
+      olvidarSesion()
+      return null
+    }
+    return s
+  })
   const [vencida, setVencida] = useState(false)
 
   useEffect(() => {
@@ -66,15 +67,11 @@ export default function App() {
 }
 
 function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () => void; alVencer: () => void }) {
-  const [vista, setVista] = useState(vistaGuardada)
+  const [vista, setVista] = useState(VISTA_INICIAL)
   const [fecha, setFecha] = useState(hoyISO)
   const [ayuda, setAyuda] = useState(false)
   const complejo = complejoPorId(vista.complejo)
   const { turnos, cargando, error, recargar, aplicarLocal } = useTurnos(fecha, complejo.id)
-
-  useEffect(() => {
-    try { localStorage.setItem(CLAVE_VISTA, JSON.stringify(vista)) } catch { /* sin storage */ }
-  }, [vista])
 
   return (
     <div className="min-h-[100dvh] pb-24">

@@ -1,6 +1,6 @@
 import type { Complejo } from '../config/complejos'
 import { claveTurno, type MapaTurnos } from './turnos'
-import { fechaLarga } from './fechas'
+import { ddmm, etiquetaRelativa } from './fechas'
 
 export interface ContactoImagen {
   nombre: string
@@ -156,9 +156,18 @@ function logoEn(ctx: CanvasRenderingContext2D, logo: HTMLImageElement | null, cx
   ctx.restore()
 }
 
+/**
+ * Hoy, ayer y mañana: "HOY" grande y la fecha chica abajo.
+ * Cualquier otro día: solo la fecha. y es el centro del bloque.
+ */
 function lineaFecha(ctx: CanvasRenderingContext2D, fecha: string, y: number) {
-  const t = fechaLarga(fecha)
-  texto(ctx, t.charAt(0).toUpperCase() + t.slice(1), ANCHO / 2, y, 46, 700, C.pelota)
+  const etiqueta = etiquetaRelativa(fecha)
+  if (etiqueta) {
+    texto(ctx, etiqueta, ANCHO / 2, y - 20, 70, 800, C.pelota)
+    texto(ctx, ddmm(fecha), ANCHO / 2, y + 30, 36, 700, C.blanco)
+  } else {
+    texto(ctx, ddmm(fecha), ANCHO / 2, y, 54, 800, C.pelota)
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -248,8 +257,8 @@ function dibujarNoche(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string,
   texto(ctx, c.tituloImagen, ANCHO / 2, 218, 92)
   ctx.fillStyle = C.rojo
   ctx.fillRect(ANCHO / 2 - 160, 274, 320, 5)
-  lineaFecha(ctx, fecha, 318)
-  logoEn(ctx, logo, ANCHO / 2, 460, 215)
+  lineaFecha(ctx, fecha, 328)
+  logoEn(ctx, logo, ANCHO / 2, 480, 200)
 
   const top = 600
   const disponible = ALTO - 235 - top
@@ -318,8 +327,8 @@ function fondoCesped(ctx: CanvasRenderingContext2D) {
 }
 
 function iconoCancha(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  const w = 200
-  const h = 100
+  const w = 180
+  const h = 86
   ctx.save()
   ctx.strokeStyle = C.blanco
   ctx.lineWidth = 4
@@ -399,9 +408,9 @@ function dibujarColumnas(
 function dibujarCesped(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
   fondoCesped(ctx)
   texto(ctx, 'TURNOS DE PÁDEL', ANCHO / 2, 115, 104)
-  texto(ctx, c.tituloImagen, ANCHO / 2, 215, 84)
-  lineaFecha(ctx, fecha, 292)
-  iconoCancha(ctx, ANCHO / 2, 385)
+  texto(ctx, c.tituloImagen, ANCHO / 2, 208, 80)
+  lineaFecha(ctx, fecha, 312)
+  iconoCancha(ctx, ANCHO / 2, 412)
   const top = 470
   // el pie crece con la cantidad de contactos y las columnas se ajustan al espacio que queda
   const altoPie = contactos.length ? 70 + PASO_PIE_CENTRO * contactos.length : 60

@@ -35,6 +35,7 @@ export async function ingresar(usuario: string, clave: string, nombre: string): 
   })
   if (error) {
     if (error.code === '28P01') throw new Error('Usuario o contraseña incorrectos.')
+    if (error.code === '22023') throw new Error(error.message)
     throw new Error('No se pudo conectar con el servidor. Probá de nuevo en unos segundos.')
   }
   const s: Sesion = { token: data as string, usuario: usuario.trim().toUpperCase(), nombre: nombre.trim() }

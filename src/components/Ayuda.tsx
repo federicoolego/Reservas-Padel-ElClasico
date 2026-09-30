@@ -53,7 +53,7 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </p>
 
           <Seccion titulo="Ingresar">
-            <p>Entrá con el usuario y la contraseña del complejo. En {b('Tu nombre')} poné cómo te llaman: aparece en cada turno que marques, así se sabe quién lo tomó.</p>
+            <p>Entrá con el usuario y la contraseña del complejo. En {b('Tu nombre')}, que es obligatorio, poné cómo te llaman: aparece en cada turno que marques, así se sabe quién lo tomó.</p>
             <p>La sesión queda abierta en ese celu o compu durante 60 días. Si la usás en un equipo compartido, tocá {b('Salir')} al terminar.</p>
           </Seccion>
 
