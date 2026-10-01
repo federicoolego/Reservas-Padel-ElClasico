@@ -142,7 +142,7 @@ function pelota(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number
 function marcaDeAgua(ctx: CanvasRenderingContext2D, y = ALTO - 34) {
   ctx.save()
   ctx.globalAlpha = 0.6
-  texto(ctx, '🎾 Desarrollado por Federico Olego 🎾', ANCHO / 2, y, 24, 600, C.blanco, 'center', true)
+  texto(ctx, '🎾 Desarrollado por Federico Olego 🎾', ANCHO / 2, y, 24, 600, #0d053e , 'center', true)
   ctx.restore()
 }
 
