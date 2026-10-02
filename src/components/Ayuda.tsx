@@ -63,8 +63,9 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </Seccion>
 
           <Seccion titulo="Cargar una reserva">
-            <p>En la pestaña {b('Turnos')}, tocá el horario en la cancha que corresponde: pasa de {b('Libre')} a {b('Reservada')}. Para liberarlo, tocalo de nuevo.</p>
-            <p>Abajo aparece un aviso con {b('Deshacer')} durante unos segundos, por si tocaste sin querer.</p>
+            <p>En la pestaña {b('Turnos')}, tocá el horario libre en la cancha que corresponde. Se abre un cuadro que pregunta {b('¿Para quién es la reserva?')}: escribí el nombre y tocá {b('Reservar')}.</p>
+            <p>Si tocás un turno ya reservado, ves para quién es, quién lo reservó y cuándo. Desde ahí lo podés liberar con {b('Liberar turno')}.</p>
+            <p>Abajo aparece un aviso con {b('Deshacer')} durante unos segundos, por si te equivocaste.</p>
             <p>Cada turno reservado muestra quién lo marcó y a qué hora. Los horarios que ya pasaron se ven más claros.</p>
             <p>Si otra persona reserva o libera un turno, lo ves al instante en tu pantalla, sin recargar.</p>
           </Seccion>

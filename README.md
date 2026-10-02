@@ -12,7 +12,7 @@ Stack: Vite + React + TypeScript + Tailwind + Supabase. Publicada con GitHub Pag
 
 En el proyecto de Supabase, abrí **SQL Editor** y corré `supabase/reservas.sql` una sola vez.
 Crea tablas y funciones con prefijo `reservas_`; no toca nada de la app de torneos.
-Después corré las migraciones de `supabase/` en orden (`migracion-001-limites.sql`, …).
+Después corré las migraciones de `supabase/` en orden (`migracion-001-limites.sql`, `migracion-002-…`, `migracion-003-reservado-para.sql`).
 
 ## Rango de fechas y limpieza
 

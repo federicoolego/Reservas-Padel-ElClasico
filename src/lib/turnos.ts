@@ -11,6 +11,7 @@ export interface Turno {
   estado: Estado
   actualizado_por: string | null
   actualizado: string
+  reservado_para?: string | null
 }
 
 export const claveTurno = (cancha: string, hora: string) => `${cancha}|${hora}`
@@ -38,6 +39,7 @@ export async function cambiarEstado(
   cancha: string,
   hora: string,
   estado: Estado,
+  para: string | null,
 ): Promise<Turno> {
   const { data, error } = await supabase.rpc('reservas_set_estado', {
     p_token: token,
@@ -46,6 +48,7 @@ export async function cambiarEstado(
     p_cancha: cancha,
     p_hora: hora,
     p_estado: estado,
+    p_para: para,
   })
   if (error) {
     if (error.code === '28000') throw new SesionVencida(error.message)

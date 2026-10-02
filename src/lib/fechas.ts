@@ -29,6 +29,15 @@ export function horaDe(ts: string): string {
   return new Intl.DateTimeFormat('es-AR', { timeZone: ZONA, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ts))
 }
 
+/** "30/09 a las 19:42" (hora Argentina) de un timestamp */
+export function fechaHoraDe(ts: string): string {
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', { timeZone: ZONA, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+      .formatToParts(new Date(ts)).map((x) => [x.type, x.value]),
+  )
+  return `${p.day}/${p.month} a las ${p.hour}:${p.minute}`
+}
+
 /** "30/09" */
 export const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
 

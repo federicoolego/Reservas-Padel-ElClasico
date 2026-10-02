@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Complejo } from '../config/complejos'
 import { cambiarEstado, claveTurno, SesionVencida, type Estado, type MapaTurnos, type Turno } from '../lib/turnos'
 import { ahoraHHMM, horaDe, hoyISO } from '../lib/fechas'
+import { DialogoDetalle, DialogoReservar } from './DialogosTurno'
 
 interface Props {
   complejo: Complejo
@@ -21,6 +22,8 @@ interface Aviso {
 export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLocal, alVencerSesion }: Props) {
   const [pendientes, setPendientes] = useState<Set<string>>(new Set())
   const [aviso, setAviso] = useState<Aviso | null>(null)
+  // turno con el popup abierto; el popup que se ve depende del estado en vivo del turno
+  const [seleccion, setSeleccion] = useState<{ cancha: string; hora: string } | null>(null)
   const temporizador = useRef<number>()
 
   useEffect(() => () => window.clearTimeout(temporizador.current), [])
@@ -31,7 +34,7 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
     temporizador.current = window.setTimeout(() => setAviso(null), a.error ? 6000 : 5000)
   }
 
-  async function guardar(cancha: string, hora: string, estado: Estado, conDeshacer: boolean) {
+  async function guardar(cancha: string, hora: string, estado: Estado, para: string | null, conDeshacer: boolean) {
     const k = claveTurno(cancha, hora)
     const anterior = turnos[k]
     // cambio optimista: se ve al instante y se revierte si falla
@@ -39,21 +42,25 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
       fecha, complejo: complejo.id, cancha, hora, estado,
       actualizado_por: anterior?.actualizado_por ?? null,
       actualizado: new Date().toISOString(),
+      reservado_para: estado === 'reservada' ? para : null,
     })
     setPendientes((p) => new Set(p).add(k))
     try {
-      const t = await cambiarEstado(token, fecha, complejo.id, cancha, hora, estado)
+      const t = await cambiarEstado(token, fecha, complejo.id, cancha, hora, estado, para)
       aplicarLocal(t)
       if (conDeshacer) {
         const lugar = complejo.canchas.length > 1 ? ` · ${cancha}` : ''
         mostrar({
-          texto: `${hora}${lugar} ${estado === 'reservada' ? 'reservado' : 'liberado'}`,
-          deshacer: () => guardar(cancha, hora, estado === 'reservada' ? 'libre' : 'reservada', false),
+          texto: estado === 'reservada' ? `${hora}${lugar} reservado para ${para}` : `${hora}${lugar} liberado`,
+          // deshacer una liberación vuelve a reservar para la misma persona
+          deshacer: () => estado === 'reservada'
+            ? guardar(cancha, hora, 'libre', null, false)
+            : guardar(cancha, hora, 'reservada', anterior?.reservado_para ?? null, false),
         })
       }
     } catch (e) {
       if (anterior) aplicarLocal(anterior)
-      else aplicarLocal({ fecha, complejo: complejo.id, cancha, hora, estado: 'libre', actualizado_por: null, actualizado: new Date().toISOString() })
+      else aplicarLocal({ fecha, complejo: complejo.id, cancha, hora, estado: 'libre', actualizado_por: null, actualizado: new Date().toISOString(), reservado_para: null })
       if (e instanceof SesionVencida) return alVencerSesion()
       mostrar({ texto: (e as Error).message, error: true })
     } finally {
@@ -74,7 +81,7 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
   return (
     <div>
       <p className="mb-3 text-sm text-tinta">
-        <strong className="text-noche">{total - reservadas}</strong> libres de {total}. Tocá un turno para cambiar su estado.
+        <strong className="text-noche">{total - reservadas}</strong> libres de {total}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-linea bg-white">
@@ -101,7 +108,7 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
                     return (
                       <td key={c} className="p-1">
                         <button
-                          onClick={() => guardar(c, h, reservada ? 'libre' : 'reservada', true)}
+                          onClick={() => setSeleccion({ cancha: c, hora: h })}
                           disabled={pendiente}
                           aria-pressed={reservada}
                           aria-label={`${h} ${c}: ${reservada ? 'reservada' : 'libre'}`}
@@ -127,6 +134,20 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
           </tbody>
         </table>
       </div>
+
+      {seleccion && (() => {
+        const { cancha, hora } = seleccion
+        const t = turnos[claveTurno(cancha, hora)]
+        const lugar = { hora, cancha: complejo.canchas.length > 1 ? cancha : null, fecha }
+        const cerrar = () => setSeleccion(null)
+        return t?.estado === 'reservada' ? (
+          <DialogoDetalle lugar={lugar} turno={t} alCerrar={cerrar}
+            alLiberar={() => { cerrar(); guardar(cancha, hora, 'libre', null, true) }} />
+        ) : (
+          <DialogoReservar lugar={lugar} alCerrar={cerrar}
+            alConfirmar={(para) => { cerrar(); guardar(cancha, hora, 'reservada', para, true) }} />
+        )
+      })()}
 
       {aviso && (
         <div role="status"
