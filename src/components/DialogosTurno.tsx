@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import type { Turno } from '../lib/turnos'
 import { fechaHoraDe, fechaLarga } from '../lib/fechas'
+import { diaSemanaDe, losDias } from '../lib/fijos'
 
 /** Datos del turno que se muestran en el encabezado: "19:00 · BX1 · miércoles 30/09" */
 export interface LugarTurno {
@@ -9,7 +10,14 @@ export interface LugarTurno {
   fecha: string
 }
 
-function Dialogo({ titulo, lugar, alCerrar, children }: { titulo: string; lugar: LugarTurno; alCerrar: () => void; children: ReactNode }) {
+export const textoLugar = (l: LugarTurno) => (
+  <>
+    <span className="font-semibold text-pelota">{l.hora}</span>
+    {l.cancha && <> · {l.cancha}</>} · {fechaLarga(l.fecha)}
+  </>
+)
+
+export function Dialogo({ titulo, subtitulo, alCerrar, children }: { titulo: string; subtitulo?: ReactNode; alCerrar: () => void; children: ReactNode }) {
   // ref para no re-ejecutar el efecto en cada render (la tabla se actualiza en tiempo real)
   const alCerrarRef = useRef(alCerrar)
   alCerrarRef.current = alCerrar
@@ -31,12 +39,9 @@ function Dialogo({ titulo, lugar, alCerrar, children }: { titulo: string; lugar:
         onClick={(e) => e.stopPropagation()}>
         <div className="bg-noche px-5 py-4 text-white">
           <h2 id="titulo-dialogo" className="font-tablero text-3xl font-extrabold leading-tight">{titulo}</h2>
-          <p className="mt-0.5 text-sm text-white/75">
-            <span className="font-semibold text-pelota">{lugar.hora}</span>
-            {lugar.cancha && <> · {lugar.cancha}</>} · {fechaLarga(lugar.fecha)}
-          </p>
+          {subtitulo && <p className="mt-0.5 text-sm text-white/75">{subtitulo}</p>}
         </div>
-        <div className="px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-5">{children}</div>
+        <div className="max-h-[75dvh] overflow-y-auto px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-5">{children}</div>
       </div>
     </div>
   )
@@ -56,7 +61,7 @@ export function DialogoReservar({ lugar, alConfirmar, alCerrar }: {
   }
 
   return (
-    <Dialogo titulo="¿Para quién es la reserva?" lugar={lugar} alCerrar={alCerrar}>
+    <Dialogo titulo="¿Para quién es la reserva?" subtitulo={textoLugar(lugar)} alCerrar={alCerrar}>
       <form onSubmit={enviar} className="space-y-4">
         <input
           className="w-full rounded-lg border border-linea bg-white px-4 py-3 text-base text-noche placeholder:text-tinta/60 focus:border-escudo focus:outline-none"
@@ -93,9 +98,10 @@ export function DialogoDetalle({ lugar, turno, alLiberar, alCerrar }: {
   )
 
   return (
-    <Dialogo titulo="Turno reservado" lugar={lugar} alCerrar={alCerrar}>
+    <Dialogo titulo={turno.fijo_id ? 'Turno fijo' : 'Turno reservado'} subtitulo={textoLugar(lugar)} alCerrar={alCerrar}>
       <dl className="rounded-xl bg-niebla px-4">
         {fila('Para', turno.reservado_para || <span className="font-normal italic text-tinta">Sin dato</span>)}
+        {turno.fijo_id && fila('Se repite', `Todos ${losDias(diaSemanaDe(lugar.fecha))}`)}
         {fila('Reservó', turno.actualizado_por || <span className="font-normal italic text-tinta">Sin dato</span>)}
         {fila('Cuándo', fechaHoraDe(turno.actualizado))}
       </dl>
@@ -105,9 +111,14 @@ export function DialogoDetalle({ lugar, turno, alLiberar, alCerrar }: {
           Cerrar
         </button>
         <button onClick={alLiberar} className="rounded-xl border-2 border-rojo px-5 font-semibold text-rojo">
-          Liberar turno
+          {turno.fijo_id ? 'Liberar solo este día' : 'Liberar turno'}
         </button>
       </div>
+      {turno.fijo_id && (
+        <p className="mt-3 text-xs text-tinta">
+          Liberar solo este día no toca las otras semanas. Para cambiar o dar de baja el turno fijo, andá a la pestaña Fijos.
+        </p>
+      )}
     </Dialogo>
   )
 }

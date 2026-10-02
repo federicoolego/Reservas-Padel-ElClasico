@@ -119,7 +119,11 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
                           } ${pendiente ? 'animate-pulse' : ''} ${paso ? 'opacity-60' : ''}`}
                         >
                           <span className="font-tablero text-xl font-bold leading-none">{reservada ? 'Reservada' : 'Libre'}</span>
-                          {reservada && t?.actualizado_por && (
+                          {reservada && t?.fijo_id ? (
+                            <span className="mt-1 max-w-full truncate px-1 text-[11px] font-semibold leading-none text-pelota">
+                              Fijo · {t.reservado_para}
+                            </span>
+                          ) : reservada && t?.actualizado_por && (
                             <span className="mt-1 max-w-full truncate px-1 text-[11px] leading-none text-white/85">
                               {t.actualizado_por} {horaDe(t.actualizado)}
                             </span>

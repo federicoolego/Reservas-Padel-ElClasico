@@ -9,9 +9,12 @@ import Login from './pages/Login'
 import SelectorFecha from './components/SelectorFecha'
 import TablaTurnos from './components/TablaTurnos'
 import VistaImagen from './components/VistaImagen'
+import VistaFijos from './components/VistaFijos'
+import { sincronizarFijos } from './lib/fijos'
+import { SesionVencida } from './lib/turnos'
 import Ayuda from './components/Ayuda'
 
-type Pestana = 'turnos' | 'imagen'
+type Pestana = 'turnos' | 'fijos' | 'imagen'
 // Siempre arranca en El Clásico, pestaña Turnos, día de hoy
 const VISTA_INICIAL: { complejo: ComplejoId; pestana: Pestana } = { complejo: COMPLEJOS[0].id, pestana: 'turnos' }
 
@@ -73,6 +76,12 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
   const complejo = complejoPorId(vista.complejo)
   const { turnos, cargando, error, recargar, aplicarLocal } = useTurnos(fecha, complejo.id)
 
+  // Al abrir la app se reservan los fijos que entraron en la ventana de días (idempotente)
+  useEffect(() => {
+    sincronizarFijos(sesion.token).catch((e) => e instanceof SesionVencida && alVencer())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
     <div className="min-h-[100dvh] pb-24">
       <header className="sticky top-[env(safe-area-inset-top,0px)] z-10 bg-noche text-white shadow-lg">
@@ -99,28 +108,30 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
       </header>
 
       <main className="mx-auto max-w-3xl space-y-4 px-4 pt-4">
-        <SelectorFecha fecha={fecha} onCambio={setFecha} />
+        {vista.pestana !== 'fijos' && <SelectorFecha fecha={fecha} onCambio={setFecha} />}
 
         {/* pestañas del módulo */}
-        <div className="grid grid-cols-2 rounded-xl bg-white p-1 border border-linea" role="tablist">
-          {(['turnos', 'imagen'] as const).map((p) => (
+        <div className="grid grid-cols-3 rounded-xl bg-white p-1 border border-linea" role="tablist">
+          {(['turnos', 'fijos', 'imagen'] as const).map((p) => (
             <button key={p} role="tab" aria-selected={vista.pestana === p}
               onClick={() => setVista((v) => ({ ...v, pestana: p }))}
               className={`rounded-lg py-2.5 font-tablero text-xl font-bold ${
                 vista.pestana === p ? 'bg-escudo text-white' : 'text-tinta'}`}>
-              {p === 'turnos' ? 'Turnos' : 'Imagen'}
+              {p === 'turnos' ? 'Turnos' : p === 'fijos' ? 'Fijos' : 'Imagen'}
             </button>
           ))}
         </div>
 
-        {error && (
+        {error && vista.pestana !== 'fijos' && (
           <div className="flex items-center justify-between gap-3 rounded-xl bg-rojo/10 px-4 py-3 text-rojo">
             <span className="text-sm font-medium">{error}</span>
             <button onClick={recargar} className="shrink-0 text-sm font-bold underline">Reintentar</button>
           </div>
         )}
 
-        {cargando ? (
+        {vista.pestana === 'fijos' ? (
+          <VistaFijos complejo={complejo} token={sesion.token} alVencerSesion={alVencer} />
+        ) : cargando ? (
           <p className="py-16 text-center text-tinta">Cargando turnos…</p>
         ) : vista.pestana === 'turnos' ? (
           <TablaTurnos complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token}

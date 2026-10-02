@@ -12,7 +12,15 @@ Stack: Vite + React + TypeScript + Tailwind + Supabase. Publicada con GitHub Pag
 
 En el proyecto de Supabase, abrí **SQL Editor** y corré `supabase/reservas.sql` una sola vez.
 Crea tablas y funciones con prefijo `reservas_`; no toca nada de la app de torneos.
-Después corré las migraciones de `supabase/` en orden (`migracion-001-limites.sql`, `migracion-002-…`, `migracion-003-reservado-para.sql`).
+Después corré las migraciones de `supabase/` en orden (`migracion-001-limites.sql`, `migracion-002-…`, `migracion-003-reservado-para.sql`, `migracion-004-turnos-fijos.sql`).
+
+## Turnos fijos
+
+Pestaña **Fijos** (tabla `reservas_fijos`, migración 004). Cada fijo se materializa como reservas reales en
+`reservas_turnos` (columna `fijo_id`) para los próximos `DIAS_ADELANTE` días; nunca pisa un turno ya reservado.
+La app llama a `reservas_fijos_sincronizar()` al abrir para correr la ventana. Si querés que pase aunque nadie
+abra la app, programalo con pg_cron (comentado al final de la migración). Si cambiás `DIAS_ADELANTE`,
+cambiá también `reservas__dias_adelante()`.
 
 ## Rango de fechas y limpieza
 

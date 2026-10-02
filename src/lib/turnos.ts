@@ -12,6 +12,7 @@ export interface Turno {
   actualizado_por: string | null
   actualizado: string
   reservado_para?: string | null
+  fijo_id?: string | null
 }
 
 export const claveTurno = (cancha: string, hora: string) => `${cancha}|${hora}`

@@ -58,7 +58,7 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </Seccion>
 
           <Seccion titulo="Elegir complejo y día">
-            <p>Arriba elegís {b('El Clásico')} (BX1, BX2 y C1) o {b('El Clásico 2')}.</p>
+            <p>Arriba elegís {b('El Clásico')} (BX1, BX2 y C1) o {b('El Clásico 2')}. Cada uno tiene tres pestañas: {b('Turnos')}, {b('Fijos')} e {b('Imagen')}.</p>
             <p>Con las flechas ‹ › pasás al día anterior o al siguiente. Para ir a una fecha puntual, tocá la fecha y se abre el calendario. El botón {b('Hoy')} te vuelve al día actual.</p>
           </Seccion>
 
@@ -68,6 +68,13 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
             <p>Abajo aparece un aviso con {b('Deshacer')} durante unos segundos, por si te equivocaste.</p>
             <p>Cada turno reservado muestra quién lo marcó y a qué hora. Los horarios que ya pasaron se ven más claros.</p>
             <p>Si otra persona reserva o libera un turno, lo ves al instante en tu pantalla, sin recargar.</p>
+          </Seccion>
+
+          <Seccion titulo="Turnos fijos">
+            <p>En la pestaña {b('Fijos')} cargás los turnos que se repiten todas las semanas: día, hora, cancha y para quién. Se reservan solos para los próximos {DIAS_ADELANTE} días, y la ventana se corre sola.</p>
+            <p>Si alguna de esas fechas ya está reservada, la app te avisa cuáles son y qué otras canchas están libres ese día. Si hay una cancha libre todas las semanas, te ofrece usarla. Si guardás igual, esas fechas se saltean y no se pisa la reserva que ya estaba.</p>
+            <p>En la tabla, los turnos fijos dicen {b('Fijo')}. Si un día no vienen, tocá el turno y elegí {b('Liberar solo este día')}: las otras semanas siguen reservadas.</p>
+            <p>Si editás o eliminás un turno fijo, cambian sus reservas de hoy en adelante. Las pasadas quedan como historial.</p>
           </Seccion>
 
           <Seccion titulo="Compartir la imagen">
