@@ -112,7 +112,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
 
         {/* pestañas del módulo */}
         <div className="grid grid-cols-3 rounded-xl bg-white p-1 border border-linea" role="tablist">
-          {(['turnos', 'fijos', 'imagen'] as const).map((p) => (
+          {(['fijos', 'turnos', 'imagen'] as const).map((p) => (
             <button key={p} role="tab" aria-selected={vista.pestana === p}
               onClick={() => setVista((v) => ({ ...v, pestana: p }))}
               className={`rounded-lg py-2.5 font-tablero text-xl font-bold ${

@@ -58,7 +58,7 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </Seccion>
 
           <Seccion titulo="Elegir complejo y día">
-            <p>Arriba elegís {b('El Clásico')} (BX1, BX2 y C1) o {b('El Clásico 2')}. Cada uno tiene tres pestañas: {b('Turnos')}, {b('Fijos')} e {b('Imagen')}.</p>
+            <p>Arriba elegís {b('El Clásico')} (BX1, BX2 y C1) o {b('El Clásico 2')}. Cada uno tiene tres pestañas: {b('Fijos')}, {b('Turnos')} e {b('Imagen')}.</p>
             <p>Con las flechas ‹ › pasás al día anterior o al siguiente. Para ir a una fecha puntual, tocá la fecha y se abre el calendario. El botón {b('Hoy')} te vuelve al día actual.</p>
           </Seccion>
 
