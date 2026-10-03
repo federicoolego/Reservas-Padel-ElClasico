@@ -3,6 +3,7 @@ import type { Complejo } from '../config/complejos'
 import { cambiarEstado, claveTurno, SesionVencida, type Estado, type MapaTurnos, type Turno } from '../lib/turnos'
 import { ahoraHHMM, horaDe, hoyISO } from '../lib/fechas'
 import { DialogoDetalle, DialogoReservar } from './DialogosTurno'
+import { esPasado, MENSAJE_PASADO } from '../config/limites'
 
 interface Props {
   complejo: Complejo
@@ -35,6 +36,7 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
   }
 
   async function guardar(cancha: string, hora: string, estado: Estado, para: string | null, conDeshacer: boolean) {
+    if (esPasado(fecha)) return mostrar({ texto: MENSAJE_PASADO, error: true })
     const k = claveTurno(cancha, hora)
     const anterior = turnos[k]
     // cambio optimista: se ve al instante y se revierte si falla
@@ -73,6 +75,13 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
   }
 
   const esHoy = fecha === hoyISO()
+  const pasado = esPasado(fecha)
+
+  // día pasado: lo libre avisa; lo reservado abre el detalle en solo lectura
+  function tocar(cancha: string, hora: string) {
+    if (pasado && turnos[claveTurno(cancha, hora)]?.estado !== 'reservada') return mostrar({ texto: MENSAJE_PASADO, error: true })
+    setSeleccion({ cancha, hora })
+  }
   const ahora = ahoraHHMM()
   const total = complejo.canchas.length * complejo.horarios.length
   const reservadas = complejo.canchas.reduce(
@@ -80,9 +89,15 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
 
   return (
     <div>
-      <p className="mb-3 text-sm text-tinta">
-        <strong className="text-noche">{total - reservadas}</strong> libres de {total}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
-      </p>
+      {pasado ? (
+        <p className="mb-3 rounded-xl bg-noche/5 px-3 py-2 text-sm text-tinta">
+          <strong className="text-noche">Día pasado: solo consulta.</strong> Tocá un turno reservado para ver el detalle.
+        </p>
+      ) : (
+        <p className="mb-3 text-sm text-tinta">
+          <strong className="text-noche">{total - reservadas}</strong> libres de {total}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
+        </p>
+      )}
 
       <div className="overflow-x-auto rounded-2xl border border-linea bg-white">
         <table className="w-full border-collapse">
@@ -108,7 +123,7 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
                     return (
                       <td key={c} className="p-1">
                         <button
-                          onClick={() => setSeleccion({ cancha: c, hora: h })}
+                          onClick={() => tocar(c, h)}
                           disabled={pendiente}
                           aria-pressed={reservada}
                           aria-label={`${h} ${c}: ${reservada ? 'reservada' : 'libre'}`}
@@ -116,7 +131,7 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
                             reservada
                               ? 'border-rojo bg-rojo text-white'
                               : 'border-cesped/40 bg-cesped/5 text-cesped active:bg-cesped/15'
-                          } ${pendiente ? 'animate-pulse' : ''} ${paso ? 'opacity-60' : ''}`}
+                          } ${pendiente ? 'animate-pulse' : ''} ${paso || pasado ? 'opacity-60' : ''}`}
                         >
                           <span className="font-tablero text-xl font-bold leading-none">{reservada ? 'Reservada' : 'Libre'}</span>
                           {reservada && t?.fijo_id ? (
@@ -144,8 +159,9 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
         const t = turnos[claveTurno(cancha, hora)]
         const lugar = { hora, cancha: complejo.canchas.length > 1 ? cancha : null, fecha }
         const cerrar = () => setSeleccion(null)
+        if (pasado && t?.estado !== 'reservada') return null
         return t?.estado === 'reservada' ? (
-          <DialogoDetalle lugar={lugar} turno={t} alCerrar={cerrar}
+          <DialogoDetalle lugar={lugar} turno={t} alCerrar={cerrar} soloLectura={pasado}
             alLiberar={() => { cerrar(); guardar(cancha, hora, 'libre', null, true) }} />
         ) : (
           <DialogoReservar lugar={lugar} alCerrar={cerrar}

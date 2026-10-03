@@ -1,11 +1,11 @@
 import { useRef } from 'react'
 import { fechaLarga, hoyISO, sumarDias } from '../lib/fechas'
-import { DIAS_ADELANTE, DIAS_HISTORIA } from '../config/limites'
+import { DIAS_HISTORIA, fechaMaxima } from '../config/limites'
 
 export default function SelectorFecha({ fecha, onCambio }: { fecha: string; onCambio: (f: string) => void }) {
   const hoy = hoyISO()
   const min = sumarDias(hoy, -DIAS_HISTORIA)
-  const max = sumarDias(hoy, DIAS_ADELANTE)
+  const max = fechaMaxima(hoy)
   const input = useRef<HTMLInputElement>(null)
 
   const etiqueta = fecha === hoy ? 'Hoy' : fecha === sumarDias(hoy, 1) ? 'Mañana' : fecha === sumarDias(hoy, -1) ? 'Ayer' : 'Tocá para elegir otro día'

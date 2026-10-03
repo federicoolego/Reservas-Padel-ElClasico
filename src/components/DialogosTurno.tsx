@@ -81,11 +81,12 @@ export function DialogoReservar({ lugar, alConfirmar, alCerrar }: {
   )
 }
 
-export function DialogoDetalle({ lugar, turno, alLiberar, alCerrar }: {
+export function DialogoDetalle({ lugar, turno, alLiberar, alCerrar, soloLectura = false }: {
   lugar: LugarTurno
   turno: Turno
   alLiberar: () => void
   alCerrar: () => void
+  soloLectura?: boolean // día pasado: se puede ver, no liberar
 }) {
   const cerrar = useRef<HTMLButtonElement>(null)
   useEffect(() => cerrar.current?.focus(), [])
@@ -110,11 +111,16 @@ export function DialogoDetalle({ lugar, turno, alLiberar, alCerrar }: {
           className="flex-1 rounded-xl bg-noche py-3 font-tablero text-2xl font-bold text-white">
           Cerrar
         </button>
-        <button onClick={alLiberar} className="rounded-xl border-2 border-rojo px-5 font-semibold text-rojo">
-          {turno.fijo_id ? 'Liberar solo este día' : 'Liberar turno'}
-        </button>
+        {!soloLectura && (
+          <button onClick={alLiberar} className="rounded-xl border-2 border-rojo px-5 font-semibold text-rojo">
+            {turno.fijo_id ? 'Liberar solo este día' : 'Liberar turno'}
+          </button>
+        )}
       </div>
-      {turno.fijo_id && (
+      {soloLectura && (
+        <p className="mt-3 text-xs text-tinta">Solo se puede reservar/cancelar turnos del día o posteriores.</p>
+      )}
+      {turno.fijo_id && !soloLectura && (
         <p className="mt-3 text-xs text-tinta">
           Liberar solo este día no toca las otras semanas. Para cambiar o dar de baja el turno fijo, andá a la pestaña Fijos.
         </p>

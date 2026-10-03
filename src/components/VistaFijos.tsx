@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import type { Complejo } from '../config/complejos'
-import { DIAS_ADELANTE } from '../config/limites'
+import { fechaMaxima } from '../config/limites'
 import { SesionVencida } from '../lib/turnos'
 import { ddmm, fechaLarga, hoyISO } from '../lib/fechas'
 import {
@@ -52,8 +52,9 @@ export default function VistaFijos({ complejo, token, alVencerSesion }: Props) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-tinta">
-        Los turnos fijos se reservan solos para los próximos {DIAS_ADELANTE} días. Si editás o eliminás uno, sus reservas
-        se actualizan de hoy en adelante. Nunca pisan un turno que ya esté reservado.
+        Los turnos fijos se reservan solos hasta fin del mes próximo (hoy, hasta el {ddmm(fechaMaxima())}) y la ventana se
+        corre sola cada mes. Si editás o eliminás uno, sus reservas se actualizan de hoy en adelante. Nunca pisan un turno
+        que ya esté reservado.
       </p>
 
       <button onClick={nuevo} disabled={ocupado}
@@ -137,7 +138,7 @@ function EditorFijo({ complejo, token, inicial, alCerrar, alGuardar, alVencerSes
     const donde = variasCanchas ? ` en ${d.cancha}` : ''
     const extra = salteadas ? ` ${salteadas === 1 ? 'Una fecha quedó' : `${salteadas} fechas quedaron`} sin reservar porque estaba ocupada.` : ''
     alGuardar(`Turno fijo de ${d.para.trim()} guardado: ${losDias(d.dia_semana)} ${d.hora}${donde}. ` +
-      `${cantidad - salteadas} reserva${cantidad - salteadas === 1 ? '' : 's'} en los próximos ${DIAS_ADELANTE} días.${extra}`)
+      `${cantidad - salteadas} reserva${cantidad - salteadas === 1 ? '' : 's'} hasta el ${ddmm(fechaMaxima())}.${extra}`)
   }
 
   async function ejecutar(accion: () => Promise<void>) {

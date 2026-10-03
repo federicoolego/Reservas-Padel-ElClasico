@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { DIAS_ADELANTE, DIAS_HISTORIA } from '../config/limites'
+import { DIAS_HISTORIA, fechaMaxima } from '../config/limites'
 import { hoyISO, sumarDias } from '../lib/fechas'
 
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`
@@ -17,7 +17,7 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
   const cerrar = useRef<HTMLButtonElement>(null)
   const hoy = hoyISO()
   const desde = ddmm(sumarDias(hoy, -DIAS_HISTORIA))
-  const hasta = ddmm(sumarDias(hoy, DIAS_ADELANTE))
+  const hasta = ddmm(fechaMaxima(hoy))
 
   // ref para no re-ejecutar el efecto en cada render (la tabla se actualiza en tiempo real)
   const alCerrarRef = useRef(alCerrar)
@@ -71,7 +71,7 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </Seccion>
 
           <Seccion titulo="Turnos fijos">
-            <p>En la pestaña {b('Fijos')} cargás los turnos que se repiten todas las semanas: día, hora, cancha y para quién. Se reservan solos para los próximos {DIAS_ADELANTE} días, y la ventana se corre sola.</p>
+            <p>En la pestaña {b('Fijos')} cargás los turnos que se repiten todas las semanas: día, hora, cancha y para quién. Se reservan solos hasta fin del mes próximo, y la ventana se corre sola cada mes.</p>
             <p>Si alguna de esas fechas ya está reservada, la app te avisa cuáles son y qué otras canchas están libres ese día. Si hay una cancha libre todas las semanas, te ofrece usarla. Si guardás igual, esas fechas se saltean y no se pisa la reserva que ya estaba.</p>
             <p>En la tabla, los turnos fijos dicen {b('Fijo')}. Si un día no vienen, tocá el turno y elegí {b('Liberar solo este día')}: las otras semanas siguen reservadas.</p>
             <p>Si editás o eliminás un turno fijo, cambian sus reservas de hoy en adelante. Las pasadas quedan como historial.</p>
@@ -88,7 +88,8 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </Seccion>
 
           <Seccion titulo="Qué fechas se pueden usar">
-            <p>Se pueden ver y cargar turnos desde {DIAS_HISTORIA} días atrás hasta {DIAS_ADELANTE} días adelante. Hoy eso es del {b(desde)} al {b(hasta)}. El rango se corre solo cada día.</p>
+            <p>Se puede {b('reservar y cancelar')} desde hoy hasta el último día del mes próximo: hoy eso es hasta el {b(hasta)}. El primer día de cada mes se habilita un mes más.</p>
+            <p>Los días anteriores a hoy son de {b('solo consulta')}: se ven los turnos y quién los reservó, pero no se pueden cambiar. El historial llega hasta {DIAS_HISTORIA} días atrás (hoy, desde el {b(desde)}).</p>
             <p>Fuera de ese rango, las flechas se desactivan y el calendario no deja elegir la fecha.</p>
           </Seccion>
 
