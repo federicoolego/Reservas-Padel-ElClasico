@@ -32,7 +32,7 @@ export const COMPLEJOS: Complejo[] = [
     canchas: ['Cancha 1'],
     horarios: HORARIOS,
     estilo: 'clasico',
-    nombreEnImagen: 'EL CLÁSICO 2',
+    //nombreEnImagen: 'EL CLÁSICO 2',
   },
 ]
 
