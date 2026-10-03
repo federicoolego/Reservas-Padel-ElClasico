@@ -1,6 +1,7 @@
 import type { Complejo } from '../config/complejos'
 import { claveTurno, type MapaTurnos } from './turnos'
-import { ddmm, etiquetaRelativa } from './fechas'
+import { etiquetaRelativa, fechaLarga } from './fechas'
+import { logoUrl } from './marca'
 
 export interface ContactoImagen {
   nombre: string
@@ -12,10 +13,7 @@ const ANCHO = 1080
 const ALTO = 1700
 
 const C = {
-  noche: '#0D053E',
-  escudo: '#0E599C',
   pelota: '#D2DA1F',
-  rojo: '#D7262E',
   blanco: '#FFFFFF',
 }
 
@@ -36,6 +34,7 @@ async function prepararFuentes() {
       document.fonts.load(`800 100px "Barlow Condensed"`),
       document.fonts.load(`700 60px "Barlow Condensed"`),
       document.fonts.load(`600 30px "Barlow Condensed"`),
+      document.fonts.load(`600 44px "Barlow"`),
     ])
   } catch {
     /* si no cargan, se usa la fuente de respaldo */
@@ -91,28 +90,6 @@ function tamQueEntra(ctx: CanvasRenderingContext2D, t: string, tamMax: number, a
   return tam
 }
 
-function cruz(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.save()
-  ctx.lineCap = 'round'
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 8
-  for (const [color, grosor] of [
-    ['rgba(255,255,255,0.85)', r * 0.34],
-    [C.rojo, r * 0.22],
-  ] as const) {
-    ctx.strokeStyle = color
-    ctx.lineWidth = grosor
-    ctx.beginPath()
-    ctx.moveTo(cx - r, cy - r * 0.85)
-    ctx.lineTo(cx + r, cy + r * 0.85)
-    ctx.moveTo(cx + r, cy - r * 0.85)
-    ctx.lineTo(cx - r, cy + r * 0.85)
-    ctx.stroke()
-    ctx.shadowColor = 'transparent'
-  }
-  ctx.restore()
-}
-
 function pelota(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   ctx.save()
   ctx.shadowColor = 'rgba(0,0,0,0.45)'
@@ -146,319 +123,219 @@ function marcaDeAgua(ctx: CanvasRenderingContext2D, y = ALTO - 34) {
   ctx.restore()
 }
 
-function logoEn(ctx: CanvasRenderingContext2D, logo: HTMLImageElement | null, cx: number, cy: number, alto: number) {
-  if (!logo) return
-  const ancho = (logo.width / logo.height) * alto
+// ---------------------------------------------------------------------
+// Estilo El Clásico: índigo y azul del escudo, minimalista, con pelotitas en los turnos reservados
+// ---------------------------------------------------------------------
+const P = {
+  fondo: '#0D053E',
+  claro: '#16307E',
+  menta: '#A9C2F2',
+  linea: 'rgba(255,255,255,0.18)',
+  rojo: '#D7262E',
+  azul: '#1F6FD1',
+}
+const SANS = '"Barlow", "Helvetica Neue", Arial, sans-serif'
+
+/** Texto en Barlow con letras espaciadas */
+function espaciado(ctx: CanvasRenderingContext2D, t: string, cx: number, y: number, tam: number, sep: number, color: string, peso = 600) {
   ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'
-  ctx.shadowBlur = 24
-  ctx.drawImage(logo, cx - ancho / 2, cy - alto / 2, ancho, alto)
+  ctx.font = `${peso} ${tam}px ${SANS}`
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'left'
+  ctx.fillStyle = color
+  const anchos = [...t].map((ch) => ctx.measureText(ch).width)
+  const total = anchos.reduce((a, b) => a + b, 0) + sep * (anchos.length - 1)
+  let x = cx - total / 2
+  ;[...t].forEach((ch, i) => {
+    ctx.fillText(ch, x, y)
+    x += anchos[i] + sep
+  })
   ctx.restore()
+  return total
 }
 
-/**
- * Hoy, ayer y mañana: "HOY" grande y la fecha chica abajo.
- * Cualquier otro día: solo la fecha. y es el centro del bloque.
- */
-function lineaFecha(ctx: CanvasRenderingContext2D, fecha: string, y: number) {
-  const etiqueta = etiquetaRelativa(fecha)
-  if (etiqueta) {
-    texto(ctx, etiqueta, ANCHO / 2, y - 20, 70, 800, C.pelota)
-    texto(ctx, ddmm(fecha), ANCHO / 2, y + 30, 36, 700, C.blanco)
-  } else {
-    texto(ctx, ddmm(fecha), ANCHO / 2, y, 54, 800, C.pelota)
-  }
-}
-
-// ---------------------------------------------------------------------
-// Estilo "noche": cancha azul iluminada, lista única con cruces (El Clásico 2)
-// ---------------------------------------------------------------------
-function fondoNoche(ctx: CanvasRenderingContext2D) {
-  const cielo = ctx.createLinearGradient(0, 0, 0, ALTO)
-  cielo.addColorStop(0, '#050B2A')
-  cielo.addColorStop(0.45, '#0A2366')
-  cielo.addColorStop(1, '#0D3A94')
-  ctx.fillStyle = cielo
+function fondoClasico(ctx: CanvasRenderingContext2D) {
+  const g = ctx.createRadialGradient(ANCHO / 2, 230, 60, ANCHO / 2, ALTO * 0.45, ALTO * 0.85)
+  g.addColorStop(0, P.claro)
+  g.addColorStop(0.55, '#0F1360')
+  g.addColorStop(1, P.fondo)
+  ctx.fillStyle = g
   ctx.fillRect(0, 0, ANCHO, ALTO)
 
-  // piso de la cancha en perspectiva
-  const hz = ALTO * 0.52
-  const piso = ctx.createLinearGradient(0, hz, 0, ALTO)
-  piso.addColorStop(0, '#123E9C')
-  piso.addColorStop(1, '#1E5BD0')
-  ctx.fillStyle = piso
-  ctx.beginPath()
-  ctx.moveTo(ANCHO * 0.22, hz)
-  ctx.lineTo(ANCHO * 0.78, hz)
-  ctx.lineTo(ANCHO * 1.15, ALTO)
-  ctx.lineTo(-ANCHO * 0.15, ALTO)
-  ctx.closePath()
-  ctx.fill()
-
-  // alambrado lateral
-  ctx.strokeStyle = 'rgba(120,160,255,0.16)'
-  ctx.lineWidth = 3
-  for (let i = 0; i <= 8; i++) {
-    const t = i / 8
-    ctx.beginPath()
-    ctx.moveTo(ANCHO * 0.22 * t, hz - 380 * (1 - t) - 120)
-    ctx.lineTo(ANCHO * 0.22 * t - ANCHO * 0.15 * (1 - t), ALTO)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(ANCHO - ANCHO * 0.22 * t, hz - 380 * (1 - t) - 120)
-    ctx.lineTo(ANCHO - ANCHO * 0.22 * t + ANCHO * 0.15 * (1 - t), ALTO)
-    ctx.stroke()
+  // grano muy suave
+  const r = aleatorio(20261004)
+  for (let i = 0; i < 7000; i++) {
+    ctx.fillStyle = r() < 0.5 ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.025)'
+    ctx.fillRect(r() * ANCHO, r() * ALTO, 1 + r() * 1.5, 1 + r() * 1.5)
   }
 
-  // línea central
-  const lc = ctx.createLinearGradient(0, hz, 0, ALTO)
-  lc.addColorStop(0, 'rgba(255,255,255,0.15)')
-  lc.addColorStop(1, 'rgba(255,255,255,0.75)')
-  ctx.fillStyle = lc
-  ctx.beginPath()
-  ctx.moveTo(ANCHO / 2 - 3, hz)
-  ctx.lineTo(ANCHO / 2 + 3, hz)
-  ctx.lineTo(ANCHO / 2 + 26, ALTO)
-  ctx.lineTo(ANCHO / 2 - 26, ALTO)
-  ctx.closePath()
-  ctx.fill()
-
-  // reflectores
-  for (const [x, y] of [
-    [60, 330],
-    [ANCHO - 60, 330],
-    [230, 690],
-    [ANCHO - 230, 690],
-  ]) {
-    const g = ctx.createRadialGradient(x, y, 0, x, y, 180)
-    g.addColorStop(0, 'rgba(255,255,255,0.9)')
-    g.addColorStop(0.08, 'rgba(200,225,255,0.55)')
-    g.addColorStop(1, 'rgba(120,170,255,0)')
-    ctx.fillStyle = g
-    ctx.fillRect(x - 180, y - 180, 360, 360)
-  }
-
-  // oscurecer el centro para que se lea la lista
-  const v = ctx.createRadialGradient(ANCHO / 2, ALTO * 0.55, 100, ANCHO / 2, ALTO * 0.55, ANCHO * 0.75)
-  v.addColorStop(0, 'rgba(5,11,42,0.55)')
-  v.addColorStop(1, 'rgba(5,11,42,0)')
-  ctx.fillStyle = v
-  ctx.fillRect(0, 0, ANCHO, ALTO)
-
-  // marco rojo
-  ctx.strokeStyle = C.rojo
-  ctx.lineWidth = 7
-  ctx.strokeRect(38, 38, ANCHO - 76, ALTO - 76)
-}
-
-function dibujarNoche(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
-  fondoNoche(ctx)
-  texto(ctx, 'TURNOS PÁDEL', ANCHO / 2, 125, 92)
-  texto(ctx, c.tituloImagen, ANCHO / 2, 218, 92)
-  ctx.fillStyle = C.rojo
-  ctx.fillRect(ANCHO / 2 - 160, 274, 320, 5)
-  lineaFecha(ctx, fecha, 328)
-  logoEn(ctx, logo, ANCHO / 2, 480, 200)
-
-  const top = 600
-  const disponible = ALTO - 235 - top
-  const n = c.horarios.length
-  const cancha = c.canchas[0]
-
-  // Si el complejo tuviera más de una cancha con este estilo, se agrupa por columnas.
-  if (c.canchas.length > 1) {
-    dibujarColumnas(ctx, c, turnos, logo, top, disponible, 'cruz')
-  } else {
-    const paso = Math.min(84, disponible / n)
-    const tam = paso * 1.08
-    for (let i = 0; i < n; i++) {
-      const h = c.horarios[i]
-      const y = top + paso * i + paso / 2
-      if (i > 0) {
-        const g = ctx.createLinearGradient(260, 0, ANCHO - 260, 0)
-        g.addColorStop(0, 'rgba(215,38,46,0)')
-        g.addColorStop(0.5, 'rgba(215,38,46,0.75)')
-        g.addColorStop(1, 'rgba(215,38,46,0)')
-        ctx.fillStyle = g
-        ctx.fillRect(220, y - paso / 2 - 1, ANCHO - 440, 2)
-      }
-      texto(ctx, `${h}HS`, ANCHO / 2, y + 2, tam)
-      if (turnos[claveTurno(cancha, h)]?.estado === 'reservada') cruz(ctx, ANCHO / 2, y, paso * 0.5)
-    }
-  }
-  pieContactos(ctx, contactos, 'lados')
-  marcaDeAgua(ctx, ALTO - 60)
-}
-
-// ---------------------------------------------------------------------
-// Estilo "césped": pasto con columnas por cancha y pelotitas (El Clásico)
-// ---------------------------------------------------------------------
-function fondoCesped(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = '#1B5227'
-  ctx.fillRect(0, 0, ANCHO, ALTO)
-  const r = aleatorio(20260930)
-  const tonos = ['#236B31', '#174A22', '#2A7A39', '#123D1B', '#2F8540']
-  for (let i = 0; i < 26000; i++) {
-    const x = r() * ANCHO
-    const y = r() * ALTO
-    ctx.strokeStyle = tonos[Math.floor(r() * tonos.length)]
-    ctx.globalAlpha = 0.35 + r() * 0.5
-    ctx.lineWidth = 1 + r() * 1.5
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-    ctx.lineTo(x + (r() - 0.5) * 5, y - 4 - r() * 6)
-    ctx.stroke()
-  }
-  ctx.globalAlpha = 1
-
-  // franja blanca en diagonal (como la línea de cancha)
+  // líneas de cancha de pádel, muy tenues, de fondo
   ctx.save()
-  ctx.translate(ANCHO / 2, ALTO * 0.78)
-  ctx.rotate(-0.42)
-  ctx.fillStyle = 'rgba(235,240,235,0.5)'
-  ctx.fillRect(-ANCHO, -38, ANCHO * 2, 76)
-  ctx.restore()
-
-  const v = ctx.createRadialGradient(ANCHO / 2, ALTO / 2, ANCHO * 0.3, ANCHO / 2, ALTO / 2, ANCHO)
-  v.addColorStop(0, 'rgba(0,0,0,0)')
-  v.addColorStop(1, 'rgba(0,0,0,0.45)')
-  ctx.fillStyle = v
-  ctx.fillRect(0, 0, ANCHO, ALTO)
-}
-
-function iconoCancha(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
-  const w = 180
-  const h = 86
-  ctx.save()
-  ctx.strokeStyle = C.blanco
-  ctx.lineWidth = 4
-  ctx.strokeRect(cx - w / 2, cy - h / 2, w, h)
+  ctx.strokeStyle = 'rgba(255,255,255,0.045)'
+  ctx.lineWidth = 6
+  const cx = ANCHO / 2
+  const w = 760
+  const h = 1520
+  const y0 = (ALTO - h) / 2
+  ctx.strokeRect(cx - w / 2, y0, w, h)
   ctx.beginPath()
-  ctx.moveTo(cx, cy - h / 2 - 8)
-  ctx.lineTo(cx, cy + h / 2 + 8)
-  ctx.moveTo(cx - w * 0.32, cy - h / 2)
-  ctx.lineTo(cx - w * 0.32, cy + h / 2)
-  ctx.moveTo(cx + w * 0.32, cy - h / 2)
-  ctx.lineTo(cx + w * 0.32, cy + h / 2)
-  ctx.moveTo(cx - w * 0.32, cy)
-  ctx.lineTo(cx + w * 0.32, cy)
+  ctx.moveTo(cx - w / 2, ALTO / 2)
+  ctx.lineTo(cx + w / 2, ALTO / 2)
+  ctx.moveTo(cx - w / 2, y0 + h * 0.15)
+  ctx.lineTo(cx + w / 2, y0 + h * 0.15)
+  ctx.moveTo(cx - w / 2, y0 + h * 0.85)
+  ctx.lineTo(cx + w / 2, y0 + h * 0.85)
+  ctx.moveTo(cx, y0 + h * 0.15)
+  ctx.lineTo(cx, y0 + h * 0.85)
   ctx.stroke()
   ctx.restore()
+
+  // marco fino + franja azul/roja arriba y abajo (colores del escudo)
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)'
+  ctx.lineWidth = 2
+  ctx.strokeRect(34, 34, ANCHO - 68, ALTO - 68)
+  for (const y of [0, ALTO - 12]) {
+    ctx.fillStyle = P.azul
+    ctx.fillRect(0, y, ANCHO / 2, 12)
+    ctx.fillStyle = P.rojo
+    ctx.fillRect(ANCHO / 2, y, ANCHO / 2, 12)
+  }
 }
 
-function dibujarColumnas(
-  ctx: CanvasRenderingContext2D,
-  c: Complejo,
-  turnos: MapaTurnos,
-  logo: HTMLImageElement | null,
-  top: number,
-  altoDisponible: number,
-  marca: 'pelota' | 'cruz',
-) {
+function tituloClasico(ctx: CanvasRenderingContext2D, fecha: string, logo: HTMLImageElement | null, nombre?: string) {
+  const d = nombre ? 40 : 0 // cuánto baja el bloque de abajo cuando hay nombre
+  if (logo) {
+    const alto = nombre ? 280 : 300
+    const ancho = (logo.width / logo.height) * alto
+    ctx.save()
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'
+    ctx.shadowBlur = 30
+    ctx.drawImage(logo, (ANCHO - ancho) / 2, (nombre ? 192 : 205) - alto / 2, ancho, alto)
+    ctx.restore()
+  } else {
+    espaciado(ctx, 'EL CLÁSICO', ANCHO / 2, 190, 96, 8, '#FFFFFF', 600)
+  }
+
+  // nombre del complejo debajo del logo, mismo tamaño que "TURNOS LIBRES"; el número en amarillo
+  if (nombre) {
+    const tam = 44
+    const sep = 16
+    ctx.save()
+    ctx.font = `600 ${tam}px ${SANS}`
+    const letras = [...nombre]
+    const anchos = letras.map((ch) => ctx.measureText(ch).width)
+    ctx.restore()
+    const total = anchos.reduce((x, w) => x + w, 0) + sep * (letras.length - 1)
+    let x = ANCHO / 2 - total / 2
+    letras.forEach((ch, i) => {
+      espaciado(ctx, ch, x + anchos[i] / 2, 368, tam, 0, /\d/.test(ch) ? C.pelota : '#FFFFFF', 600)
+      x += anchos[i] + sep
+    })
+  }
+
+  // ——  TURNOS LIBRES  ——
+  const y = 405 + d
+  const w = espaciado(ctx, 'TURNOS LIBRES', ANCHO / 2, y, 44, 16, '#FFFFFF', 600)
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'
+  ctx.fillRect(ANCHO / 2 - w / 2 - 110, y - 1, 80, 2)
+  ctx.fillRect(ANCHO / 2 + w / 2 + 30, y - 1, 80, 2)
+
+  // fecha en una píldora con borde fino
+  const etiqueta = etiquetaRelativa(fecha)
+  const t = `${etiqueta ? `${etiqueta} · ` : ''}${fechaLarga(fecha).toUpperCase()}`
+  ctx.save()
+  ctx.font = `600 30px ${SANS}`
+  const ancho = [...t].reduce((a, ch) => a + ctx.measureText(ch).width, 0) + 5 * (t.length - 1) + 64
+  ctx.restore()
+  ctx.strokeStyle = 'rgba(210,218,31,0.75)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.roundRect(ANCHO / 2 - ancho / 2, 452 + d, ancho, 60, 30)
+  ctx.stroke()
+  espaciado(ctx, t, ANCHO / 2, 483 + d, 30, 5, C.pelota, 600)
+}
+
+function columnasClasico(ctx: CanvasRenderingContext2D, c: Complejo, turnos: MapaTurnos, top: number, alto: number) {
   const n = c.canchas.length
-  const margen = 56
-  const sep = n > 1 ? 26 : 0
-  const anchoCol = Math.min(420, (ANCHO - margen * 2 - sep * (n - 1)) / n)
-  const total = anchoCol * n + sep * (n - 1)
-  const x0 = (ANCHO - total) / 2
-  const altoCab = 118
-  const paso = Math.min(84, (altoDisponible - altoCab - 30) / c.horarios.length)
+  const margen = 64
+  const sep = 22
+  const anchoCol = n === 1 ? 560 : (ANCHO - margen * 2 - sep * (n - 1)) / n
+  const altoCab = 104
+  const paso = Math.min(84, (alto - altoCab - 24) / c.horarios.length)
+  const tamHora = Math.min(...c.horarios.map((h) => tamQueEntra(ctx, `${h} HS`, paso * 0.74, anchoCol - 40, 700)))
+  const altoCol = altoCab + paso * c.horarios.length + 24
 
   c.canchas.forEach((cancha, i) => {
-    const x = x0 + i * (anchoCol + sep)
-    const altoCol = altoCab + paso * c.horarios.length + 30
+    const x = n === 1 ? (ANCHO - anchoCol) / 2 : margen + i * (anchoCol + sep)
+    const cx = x + anchoCol / 2
 
-    // columna
-    ctx.fillStyle = 'rgba(8,40,16,0.55)'
-    ctx.fillRect(x, top, anchoCol, altoCol)
-    ctx.strokeStyle = C.blanco
-    ctx.lineWidth = 5
-    ctx.strokeRect(x, top, anchoCol, altoCol)
+    // tarjeta
+    ctx.fillStyle = 'rgba(255,255,255,0.045)'
+    ctx.beginPath()
+    ctx.roundRect(x, top, anchoCol, altoCol, 26)
+    ctx.fill()
+    ctx.strokeStyle = P.linea
+    ctx.lineWidth = 2
+    ctx.stroke()
 
-    // cabecera: logo + nombre de cancha
-    const pad = 12
-    ctx.fillStyle = C.blanco
-    ctx.fillRect(x + pad, top + pad, anchoCol - pad * 2, altoCab - pad * 2)
-    ctx.strokeStyle = C.rojo
-    ctx.lineWidth = 4
-    ctx.strokeRect(x + pad + 5, top + pad + 5, anchoCol - pad * 2 - 10, altoCab - pad * 2 - 10)
-    const altoLogo = altoCab - pad * 2 - 22
-    const anchoLogo = logo ? (logo.width / logo.height) * altoLogo : 0
-    const espacioNombre = anchoCol - pad * 2 - 30 - anchoLogo
-    const tamNombre = tamQueEntra(ctx, cancha, 84, espacioNombre)
-    const anchoNombre = anchoTexto(ctx, cancha, tamNombre)
-    const bloque = anchoLogo + 12 + anchoNombre
-    const bx = x + (anchoCol - bloque) / 2
-    if (logo) ctx.drawImage(logo, bx, top + altoCab / 2 - altoLogo / 2, anchoLogo, altoLogo)
-    texto(ctx, cancha, bx + anchoLogo + 12, top + altoCab / 2 + 3, tamNombre, 800, C.noche, 'left', false)
+    // cabecera
+    const nombre = cancha.toUpperCase()
+    texto(ctx, nombre, cx, top + altoCab / 2 - 6, tamQueEntra(ctx, nombre, 72, anchoCol - 40), 800, '#FFFFFF', 'center', false)
+    ctx.fillStyle = P.rojo
+    ctx.fillRect(cx - 24, top + altoCab - 18, 48, 4)
 
-    // horarios
-    const tamHora = tamQueEntra(ctx, '00:00HS', paso * 0.8, anchoCol - 36)
     c.horarios.forEach((h, j) => {
-      const y = top + altoCab + 15 + paso * j + paso / 2
-      texto(ctx, `${h}HS`, x + anchoCol / 2, y + 2, tamHora)
-      if (turnos[claveTurno(cancha, h)]?.estado === 'reservada') {
-        if (marca === 'pelota') pelota(ctx, x + anchoCol / 2, y, paso * 0.44)
-        else cruz(ctx, x + anchoCol / 2, y, paso * 0.4)
+      const y = top + altoCab + 12 + paso * j + paso / 2
+      if (j > 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.07)'
+        ctx.fillRect(x + 24, y - paso / 2, anchoCol - 48, 1.5)
       }
+      const reservada = turnos[claveTurno(cancha, h)]?.estado === 'reservada'
+      texto(ctx, `${h} HS`, cx, y + 2, tamHora, 700, reservada ? 'rgba(255,255,255,0.38)' : '#FFFFFF', 'center', false)
+      if (reservada) pelota(ctx, cx, y, paso * 0.36)
     })
   })
 }
 
-function dibujarCesped(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
-  fondoCesped(ctx)
-  texto(ctx, 'TURNOS DE PÁDEL', ANCHO / 2, 115, 104)
-  texto(ctx, c.tituloImagen, ANCHO / 2, 208, 80)
-  lineaFecha(ctx, fecha, 312)
-  iconoCancha(ctx, ANCHO / 2, 412)
-  const top = 470
-  // el pie crece con la cantidad de contactos y las columnas se ajustan al espacio que queda
-  const altoPie = contactos.length ? 70 + PASO_PIE_CENTRO * contactos.length : 60
-  dibujarColumnas(ctx, c, turnos, logo, top, ALTO - altoPie - 30 - top, 'pelota')
-  pieContactos(ctx, contactos, 'centro')
-  marcaDeAgua(ctx)
+/** Contactos en grilla de 2 columnas (4 → 2×2, 3 → 2 + 1 centrado) */
+function pieClasico(ctx: CanvasRenderingContext2D, lista: ContactoImagen[], top: number) {
+  if (!lista.length) return
+  const w = espaciado(ctx, 'RESERVAS', ANCHO / 2, top, 30, 12, P.menta, 600)
+  ctx.fillStyle = 'rgba(169,207,195,0.45)'
+  ctx.fillRect(ANCHO / 2 - w / 2 - 80, top - 1, 56, 2)
+  ctx.fillRect(ANCHO / 2 + w / 2 + 24, top - 1, 56, 2)
+  const filas: ContactoImagen[][] = []
+  for (let i = 0; i < lista.length; i += 2) filas.push(lista.slice(i, i + 2))
+  filas.forEach((fila, k) => {
+    const y = top + 66 + 104 * k
+    fila.forEach((ct, j) => {
+      const x = fila.length === 1 ? ANCHO / 2 : j === 0 ? ANCHO * 0.29 : ANCHO * 0.71
+      espaciado(ctx, ct.nombre.toUpperCase(), x, y, 24, 6, P.menta, 600)
+      texto(ctx, ct.telefono, x, y + 42, tamQueEntra(ctx, ct.telefono, 50, 420, 700), 700, '#FFFFFF', 'center', false)
+    })
+  })
 }
 
-// ---------------------------------------------------------------------
-const PASO_PIE_CENTRO = 60
-
-function pieContactos(ctx: CanvasRenderingContext2D, lista: ContactoImagen[], modo: 'lados' | 'centro') {
-  const lineas = lista.map((c) => ({ nombre: c.nombre.toUpperCase(), telefono: c.telefono }))
-  if (!lineas.length) return
-  if (modo === 'centro' || lineas.length === 1) {
-    const paso = PASO_PIE_CENTRO
-    const tam = lineas.length > 2 ? 52 : 60
-    const y0 = ALTO - 95 - paso * (lineas.length - 1)
-    lineas.forEach((ct, i) => {
-      const t = `${ct.nombre}: ${ct.telefono}`
-      texto(ctx, t, ANCHO / 2, y0 + paso * i, tamQueEntra(ctx, t, tam, ANCHO - 160))
-    })
-    return
-  }
-  // Como la imagen original: con 3 contactos, 1 a la izquierda y 2 apilados a la derecha.
-  // En general, la mitad (redondeando para abajo) a la izquierda y el resto a la derecha.
-  const corte = Math.floor(lineas.length / 2)
-  const bloques = [lineas.slice(0, corte), lineas.slice(corte)]
-  const tam = 40
-  const salto = 44
-  const yc = ALTO - 150
-  bloques.forEach((bloque, lado) => {
-    const x = lado === 0 ? 260 : ANCHO - 260
-    const filas = bloque.flatMap((ct) => [bloque.length === 1 && lado === 0 ? `${ct.nombre}:` : ct.nombre, ct.telefono])
-    const y0 = yc - (salto * (filas.length - 1)) / 2
-    filas.forEach((f, k) => texto(ctx, f, x, y0 + salto * k, tamQueEntra(ctx, f, tam, 380)))
-  })
+function dibujarClasico(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
+  fondoClasico(ctx)
+  tituloClasico(ctx, fecha, logo, c.nombreEnImagen)
+  const filasPie = Math.ceil(contactos.length / 2)
+  const altoPie = contactos.length ? 66 + 104 * filasPie + 30 : 0
+  const top = c.nombreEnImagen ? 590 : 550
+  const finColumnas = ALTO - 80 - altoPie
+  columnasClasico(ctx, c, turnos, top, finColumnas - top - 20)
+  pieClasico(ctx, contactos, finColumnas + 30)
+  marcaDeAgua(ctx, ALTO - 58)
 }
 
 export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos, contactos: ContactoImagen[]): Promise<Blob> {
   await prepararFuentes()
-  const logo = await cargarImagen(`${import.meta.env.BASE_URL}logo-el-clasico.webp`).catch(() => null)
+  const logo = await cargarImagen(logoUrl()).catch(() => null)
   const canvas = document.createElement('canvas')
   canvas.width = ANCHO
   canvas.height = ALTO
   const ctx = canvas.getContext('2d')!
-  if (c.estilo === 'cesped') dibujarCesped(ctx, c, fecha, turnos, logo, contactos)
-  else dibujarNoche(ctx, c, fecha, turnos, logo, contactos)
+  dibujarClasico(ctx, c, fecha, turnos, logo, contactos)
   return new Promise((ok, mal) => canvas.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo generar la imagen'))), 'image/png'))
 }
 
