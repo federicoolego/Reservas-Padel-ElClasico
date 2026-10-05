@@ -135,7 +135,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
           <p className="py-16 text-center text-tinta">Cargando turnos…</p>
         ) : vista.pestana === 'turnos' ? (
           <TablaTurnos complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token}
-            aplicarLocal={aplicarLocal} alVencerSesion={alVencer} />
+            aplicarLocal={aplicarLocal} alVencerSesion={alVencer} nombre={sesion.nombre || sesion.usuario} />
         ) : (
           <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token} alVencerSesion={alVencer} />
         )}
