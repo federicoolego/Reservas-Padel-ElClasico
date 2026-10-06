@@ -95,11 +95,13 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
     <div>
       {pasado ? (
         <p className="mb-3 rounded-xl bg-noche/5 px-3 py-2 text-sm text-tinta">
-          <strong className="text-noche">Día pasado: solo consulta.</strong> Tocá un turno reservado para ver el detalle.
+          <strong className="text-noche">Día pasado: solo consulta.</strong>{' '}
+          <strong className="text-noche">{reservadas}</strong> reservado{reservadas === 1 ? '' : 's'} de {total}. Tocá un turno reservado para ver el detalle.
         </p>
       ) : (
         <p className="mb-3 text-sm text-tinta">
-          <strong className="text-noche">{total - reservadas}</strong> libres de {total}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
+          <strong className="text-noche">{reservadas}</strong> reservado{reservadas === 1 ? '' : 's'} y{' '}
+          <strong className="text-noche">{total - reservadas}</strong> libre{total - reservadas === 1 ? '' : 's'} de {total}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
         </p>
       )}
       <p className="-mt-1.5 mb-3 text-xs text-tinta">
