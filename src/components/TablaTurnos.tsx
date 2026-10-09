@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { Complejo } from '../config/complejos'
 import { cambiarEstado, claveTurno, SesionVencida, type Estado, type MapaTurnos, type Turno } from '../lib/turnos'
 import { ahoraHHMM, horaDe, hoyISO, textoActualizado } from '../lib/fechas'
-import { DialogoDetalle, DialogoReservar } from './DialogosTurno'
+import { Dialogo, DialogoDetalle, DialogoReservar, textoLugar } from './DialogosTurno'
+import { bloqueoEn, MOTIVOS, type Bloqueo } from '../lib/bloqueos'
+import { textoFechas, textoTurnos } from './VistaBloqueos'
 import { esPasado, MENSAJE_PASADO } from '../config/limites'
 
 interface Props {
@@ -13,6 +15,7 @@ interface Props {
   aplicarLocal: (t: Turno) => void
   alVencerSesion: () => void
   nombre?: string // quien usa la app: se muestra al instante como autor del cambio
+  bloqueos?: Bloqueo[] // turnos no disponibles (reparación, evento...)
 }
 
 interface Aviso {
@@ -21,7 +24,7 @@ interface Aviso {
   error?: boolean
 }
 
-export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLocal, alVencerSesion, nombre }: Props) {
+export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLocal, alVencerSesion, nombre, bloqueos = [] }: Props) {
   const [pendientes, setPendientes] = useState<Set<string>>(new Set())
   const [aviso, setAviso] = useState<Aviso | null>(null)
   // turno con el popup abierto; el popup que se ve depende del estado en vivo del turno
@@ -79,7 +82,10 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
   const pasado = esPasado(fecha)
 
   // día pasado: lo libre avisa; lo reservado abre el detalle en solo lectura
+  const bloq = (cancha: string, hora: string) => bloqueoEn(bloqueos, fecha, cancha, hora)
+
   function tocar(cancha: string, hora: string) {
+    if (bloq(cancha, hora) && turnos[claveTurno(cancha, hora)]?.estado !== 'reservada') return setSeleccion({ cancha, hora })
     if (pasado && turnos[claveTurno(cancha, hora)]?.estado !== 'reservada') return mostrar({ texto: MENSAJE_PASADO, error: true })
     setSeleccion({ cancha, hora })
   }
@@ -90,18 +96,22 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
   const total = complejo.canchas.length * complejo.horarios.length
   const reservadas = complejo.canchas.reduce(
     (s, c) => s + complejo.horarios.filter((h) => turnos[claveTurno(c, h)]?.estado === 'reservada').length, 0)
+  // no disponibles: bloqueados y sin reserva (una reserva previa a un bloqueo, en días pasados, sigue contando como reservada)
+  const noDisponibles = complejo.canchas.reduce(
+    (s, c) => s + complejo.horarios.filter((h) => bloq(c, h) && turnos[claveTurno(c, h)]?.estado !== 'reservada').length, 0)
+  const textoNoDisp = noDisponibles ? <> · <strong className="text-noche">{noDisponibles}</strong> no disponible{noDisponibles === 1 ? '' : 's'}</> : null
 
   return (
     <div>
       {pasado ? (
         <p className="mb-3 rounded-xl bg-noche/5 px-3 py-2 text-sm text-tinta">
           <strong className="text-noche">Día pasado: solo consulta.</strong>{' '}
-          <strong className="text-noche">{reservadas}</strong> reservado{reservadas === 1 ? '' : 's'} de {total}. Tocá un turno reservado para ver el detalle.
+          <strong className="text-noche">{reservadas}</strong> reservado{reservadas === 1 ? '' : 's'} de {total}{textoNoDisp}. Tocá un turno reservado para ver el detalle.
         </p>
       ) : (
         <p className="mb-3 text-sm text-tinta">
           <strong className="text-noche">{reservadas}</strong> reservado{reservadas === 1 ? '' : 's'} y{' '}
-          <strong className="text-noche">{total - reservadas}</strong> libre{total - reservadas === 1 ? '' : 's'} de {total}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
+          <strong className="text-noche">{total - reservadas - noDisponibles}</strong> libre{total - reservadas - noDisponibles === 1 ? '' : 's'} de {total}{textoNoDisp}. Tocá un turno libre para reservarlo, o uno reservado para ver el detalle.
         </p>
       )}
       <p className="-mt-1.5 mb-3 text-xs text-tinta">
@@ -128,7 +138,21 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
                     const k = claveTurno(c, h)
                     const t = turnos[k]
                     const reservada = t?.estado === 'reservada'
+                    const bloqueo = !reservada ? bloq(c, h) : undefined
                     const pendiente = pendientes.has(k)
+                    if (bloqueo) {
+                      const m = MOTIVOS[bloqueo.motivo]
+                      return (
+                        <td key={c} className="p-1">
+                          <button onClick={() => tocar(c, h)} aria-label={`${h} ${c}: no disponible (${m.texto})`}
+                            className={`flex h-14 w-full min-w-[64px] flex-col items-center justify-center rounded-xl border border-linea text-tinta ${paso || pasado ? 'opacity-60' : ''}`}
+                            style={{ background: 'repeating-linear-gradient(45deg,#E6E5EE,#E6E5EE 6px,#DDDCE8 6px,#DDDCE8 12px)' }}>
+                            <span className="font-tablero text-base font-bold leading-none">No disponible</span>
+                            <span className="mt-1 text-[11px] font-semibold leading-none">{m.icono} {m.texto}</span>
+                          </button>
+                        </td>
+                      )
+                    }
                     return (
                       <td key={c} className="p-1">
                         <button
@@ -168,6 +192,28 @@ export default function TablaTurnos({ complejo, fecha, turnos, token, aplicarLoc
         const t = turnos[claveTurno(cancha, hora)]
         const lugar = { hora, cancha: complejo.canchas.length > 1 ? cancha : null, fecha }
         const cerrar = () => setSeleccion(null)
+        const b = t?.estado !== 'reservada' ? bloq(cancha, hora) : undefined
+        if (b) {
+          const m = MOTIVOS[b.motivo]
+          const fila = (e: string, v: string) => (
+            <div className="flex items-baseline justify-between gap-4 border-b border-linea py-2.5 last:border-0">
+              <dt className="shrink-0 text-sm text-tinta">{e}</dt><dd className="text-right font-semibold text-noche">{v}</dd>
+            </div>
+          )
+          return (
+            <Dialogo titulo="No disponible" subtitulo={textoLugar(lugar)} alCerrar={cerrar}>
+              <dl className="rounded-xl bg-niebla px-4">
+                {fila('Motivo', `${m.icono} ${m.texto}`)}
+                {b.nota && fila('Nota', b.nota)}
+                {fila('Fechas', textoFechas(b))}
+                {fila('Turnos', textoTurnos(b.horas, complejo.horarios))}
+                {b.actualizado_por && fila('Cargó', b.actualizado_por)}
+              </dl>
+              <button onClick={cerrar} className="mt-4 w-full rounded-xl bg-noche py-3 font-tablero text-2xl font-bold text-white">Cerrar</button>
+              <p className="mt-3 text-xs text-tinta">Para cambiarlo o quitarlo, andá a la pestaña Bloqueos.</p>
+            </Dialogo>
+          )
+        }
         if (pasado && t?.estado !== 'reservada') return null
         return t?.estado === 'reservada' ? (
           <DialogoDetalle lugar={lugar} turno={t} alCerrar={cerrar} soloLectura={pasado}

@@ -244,9 +244,13 @@ function EditorFijo({ complejo, token, inicial, alCerrar, alGuardar, alVencerSes
                 <li key={c.dia} className="rounded-xl border border-rojo/30 bg-rojo/5 px-3 py-2.5">
                   <span className="block font-semibold capitalize text-noche">{fechaLarga(c.dia)}</span>
                   <span className="block text-sm text-tinta">
-                    {c.ocupado_fijo ? 'Turno fijo' : 'Reservada'}
-                    {c.ocupado_para && <> para <strong className="text-noche">{c.ocupado_para}</strong></>}
-                    {c.ocupado_por && !c.ocupado_fijo && <> (cargó {c.ocupado_por})</>}
+                    {c.ocupado_por === 'Bloqueo' ? <>No disponible · <strong className="text-noche">{c.ocupado_para}</strong> (bloqueo)</> : (
+                      <>
+                        {c.ocupado_fijo ? 'Turno fijo' : 'Reservada'}
+                        {c.ocupado_para && <> para <strong className="text-noche">{c.ocupado_para}</strong></>}
+                        {c.ocupado_por && !c.ocupado_fijo && <> (cargó {c.ocupado_por})</>}
+                      </>
+                    )}
                   </span>
                   {variasCanchas && (
                     <span className={`mt-1 block text-sm font-semibold ${otras.length ? 'text-cesped' : 'text-rojo'}`}>

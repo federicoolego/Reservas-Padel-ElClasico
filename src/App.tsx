@@ -9,12 +9,14 @@ import Login from './pages/Login'
 import SelectorFecha from './components/SelectorFecha'
 import TablaTurnos from './components/TablaTurnos'
 import VistaImagen from './components/VistaImagen'
+import VistaBloqueos from './components/VistaBloqueos'
+import { useBloqueos } from './lib/bloqueos'
 import VistaFijos from './components/VistaFijos'
 import { sincronizarFijos } from './lib/fijos'
 import { SesionVencida } from './lib/turnos'
 import Ayuda from './components/Ayuda'
 
-type Pestana = 'turnos' | 'fijos' | 'imagen'
+type Pestana = 'bloqueos' | 'turnos' | 'fijos' | 'imagen'
 // Siempre arranca en El Clásico, pestaña Turnos, día de hoy
 const VISTA_INICIAL: { complejo: ComplejoId; pestana: Pestana } = { complejo: COMPLEJOS[0].id, pestana: 'turnos' }
 
@@ -75,6 +77,7 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
   const [ayuda, setAyuda] = useState(false)
   const complejo = complejoPorId(vista.complejo)
   const { turnos, cargando, error, recargar, aplicarLocal } = useTurnos(fecha, complejo.id)
+  const { bloqueos, cargado: bloqueosCargados, recargar: recargarBloqueos } = useBloqueos(complejo.id)
 
   // Al abrir la app se reservan los fijos que entraron en la ventana de días (idempotente)
   useEffect(() => {
@@ -108,36 +111,39 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
       </header>
 
       <main className="mx-auto max-w-3xl space-y-4 px-4 pt-4">
-        {vista.pestana !== 'fijos' && <SelectorFecha fecha={fecha} onCambio={setFecha} />}
+        {vista.pestana !== 'fijos' && vista.pestana !== 'bloqueos' && <SelectorFecha fecha={fecha} onCambio={setFecha} />}
 
         {/* pestañas del módulo */}
-        <div className="grid grid-cols-3 rounded-xl bg-white p-1 border border-linea" role="tablist">
-          {(['fijos', 'turnos', 'imagen'] as const).map((p) => (
+        <div className="grid grid-cols-4 rounded-xl bg-white p-1 border border-linea" role="tablist">
+          {(['bloqueos', 'fijos', 'turnos', 'imagen'] as const).map((p) => (
             <button key={p} role="tab" aria-selected={vista.pestana === p}
               onClick={() => setVista((v) => ({ ...v, pestana: p }))}
               className={`rounded-lg py-2.5 font-tablero text-xl font-bold ${
                 vista.pestana === p ? 'bg-escudo text-white' : 'text-tinta'}`}>
-              {p === 'turnos' ? 'Turnos' : p === 'fijos' ? 'Fijos' : 'Imagen'}
+              {p === 'turnos' ? 'Turnos' : p === 'fijos' ? 'Fijos' : p === 'bloqueos' ? 'Bloqueos' : 'Imagen'}
             </button>
           ))}
         </div>
 
-        {error && vista.pestana !== 'fijos' && (
+        {error && vista.pestana !== 'fijos' && vista.pestana !== 'bloqueos' && (
           <div className="flex items-center justify-between gap-3 rounded-xl bg-rojo/10 px-4 py-3 text-rojo">
             <span className="text-sm font-medium">{error}</span>
             <button onClick={recargar} className="shrink-0 text-sm font-bold underline">Reintentar</button>
           </div>
         )}
 
-        {vista.pestana === 'fijos' ? (
+        {vista.pestana === 'bloqueos' ? (
+          <VistaBloqueos complejo={complejo} token={sesion.token} bloqueos={bloqueos} cargado={bloqueosCargados}
+            recargar={() => { recargarBloqueos(); recargar() }} alVencerSesion={alVencer} />
+        ) : vista.pestana === 'fijos' ? (
           <VistaFijos complejo={complejo} token={sesion.token} alVencerSesion={alVencer} />
         ) : cargando ? (
           <p className="py-16 text-center text-tinta">Cargando turnos…</p>
         ) : vista.pestana === 'turnos' ? (
           <TablaTurnos complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token}
-            aplicarLocal={aplicarLocal} alVencerSesion={alVencer} nombre={sesion.nombre || sesion.usuario} />
+            aplicarLocal={aplicarLocal} alVencerSesion={alVencer} nombre={sesion.nombre || sesion.usuario} bloqueos={bloqueos} />
         ) : (
-          <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token} alVencerSesion={alVencer} />
+          <VistaImagen complejo={complejo} fecha={fecha} turnos={turnos} token={sesion.token} alVencerSesion={alVencer} bloqueos={bloqueos} />
         )}
       </main>
       {ayuda && <Ayuda alCerrar={() => setAyuda(false)} />}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Complejo } from '../config/complejos'
 import type { MapaTurnos } from '../lib/turnos'
+import type { Bloqueo } from '../lib/bloqueos'
 import { generarImagen, nombreArchivo } from '../lib/imagen'
 import { useContactos } from '../lib/contactos'
 import EditorContactos from './EditorContactos'
@@ -11,9 +12,10 @@ interface Props {
   turnos: MapaTurnos
   token: string
   alVencerSesion: () => void
+  bloqueos?: Bloqueo[]
 }
 
-export default function VistaImagen({ complejo, fecha, turnos, token, alVencerSesion }: Props) {
+export default function VistaImagen({ complejo, fecha, turnos, token, alVencerSesion, bloqueos = [] }: Props) {
   const { contactos, cargado, recargar } = useContactos(complejo.id)
   const [blob, setBlob] = useState<Blob | null>(null)
   const [url, setUrl] = useState<string | null>(null)
@@ -25,7 +27,7 @@ export default function VistaImagen({ complejo, fecha, turnos, token, alVencerSe
     let vigente = true
     const t = window.setTimeout(async () => {
       try {
-        const b = await generarImagen(complejo, fecha, turnos, contactos)
+        const b = await generarImagen(complejo, fecha, turnos, contactos, bloqueos)
         if (!vigente) return
         setBlob(b)
         setUrl((prev) => {
@@ -41,7 +43,7 @@ export default function VistaImagen({ complejo, fecha, turnos, token, alVencerSe
       vigente = false
       window.clearTimeout(t)
     }
-  }, [complejo, fecha, turnos, contactos, cargado])
+  }, [complejo, fecha, turnos, contactos, cargado, bloqueos])
 
   useEffect(() => () => { if (url) URL.revokeObjectURL(url) }, [url])
 

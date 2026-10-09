@@ -2,6 +2,7 @@ import type { Complejo } from '../config/complejos'
 import { claveTurno, type MapaTurnos } from './turnos'
 import { etiquetaRelativa, fechaLarga } from './fechas'
 import { logoUrl } from './marca'
+import { bloqueoDiaCompleto, bloqueoEn, MOTIVOS, type Bloqueo } from './bloqueos'
 
 export interface ContactoImagen {
   nombre: string
@@ -255,7 +256,7 @@ function tituloClasico(ctx: CanvasRenderingContext2D, fecha: string, logo: HTMLI
   espaciado(ctx, t, ANCHO / 2, 483 + d, 30, 5, C.pelota, 600)
 }
 
-function columnasClasico(ctx: CanvasRenderingContext2D, c: Complejo, turnos: MapaTurnos, top: number, alto: number) {
+function columnasClasico(ctx: CanvasRenderingContext2D, c: Complejo, turnos: MapaTurnos, top: number, alto: number, fecha: string, bloqueos: Bloqueo[]) {
   const n = c.canchas.length
   const margen = 64
   const sep = 22
@@ -284,13 +285,49 @@ function columnasClasico(ctx: CanvasRenderingContext2D, c: Complejo, turnos: Map
     ctx.fillStyle = P.rojo
     ctx.fillRect(cx - 24, top + altoCab - 18, 48, 4)
 
+    // cancha bloqueada todo el día: cartel con el motivo en vez de los horarios
+    const entera = bloqueoDiaCompleto(bloqueos, fecha, cancha)
+    if (entera) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.roundRect(x + 14, top + altoCab, anchoCol - 28, altoCol - altoCab - 14, 18)
+      ctx.clip()
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'
+      ctx.lineWidth = 14
+      for (let k = -altoCol; k < anchoCol + altoCol; k += 34) {
+        ctx.beginPath()
+        ctx.moveTo(x + k, top)
+        ctx.lineTo(x + k + altoCol, top + altoCol)
+        ctx.stroke()
+      }
+      ctx.restore()
+      const m = MOTIVOS[entera.motivo]
+      const palabras = m.cartel.split(' ')
+      const hasta = entera.hasta > fecha ? entera.hasta : null
+      const cy = top + altoCab + (altoCol - altoCab) / 2 - (hasta ? 30 : 0)
+      ctx.save()
+      ctx.font = '40px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(m.icono, cx, cy - 40 - palabras.length * 31)
+      ctx.restore()
+      palabras.forEach((w, k) => texto(ctx, w, cx, cy - (palabras.length - 1) * 31 + k * 62, tamQueEntra(ctx, w, 60, anchoCol - 36), 800, '#FFFFFF', 'center', false))
+      if (hasta) {
+        const yh = cy + palabras.length * 31 + 34
+        espaciado(ctx, 'HASTA EL', cx, yh, 22, 4, P.menta, 600)
+        texto(ctx, `${hasta.slice(8, 10)}/${hasta.slice(5, 7)}`, cx, yh + 38, 40, 800, C.pelota, 'center', false)
+      }
+      return
+    }
+
     c.horarios.forEach((h, j) => {
       const y = top + altoCab + 12 + paso * j + paso / 2
       if (j > 0) {
         ctx.fillStyle = 'rgba(255,255,255,0.07)'
         ctx.fillRect(x + 24, y - paso / 2, anchoCol - 48, 1.5)
       }
-      const reservada = turnos[claveTurno(cancha, h)]?.estado === 'reservada'
+      // un turno bloqueado tampoco está libre: sale con pelotita
+      const reservada = turnos[claveTurno(cancha, h)]?.estado === 'reservada' || !!bloqueoEn(bloqueos, fecha, cancha, h)
       texto(ctx, `${h} HS`, cx, y + 2, tamHora, 700, reservada ? 'rgba(255,255,255,0.38)' : '#FFFFFF', 'center', false)
       if (reservada) pelota(ctx, cx, y, paso * 0.36)
     })
@@ -316,26 +353,26 @@ function pieClasico(ctx: CanvasRenderingContext2D, lista: ContactoImagen[], top:
   })
 }
 
-function dibujarClasico(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[]) {
+function dibujarClasico(ctx: CanvasRenderingContext2D, c: Complejo, fecha: string, turnos: MapaTurnos, logo: HTMLImageElement | null, contactos: ContactoImagen[], bloqueos: Bloqueo[]) {
   fondoClasico(ctx)
   tituloClasico(ctx, fecha, logo, c.nombreEnImagen)
   const filasPie = Math.ceil(contactos.length / 2)
   const altoPie = contactos.length ? 66 + 104 * filasPie + 30 : 0
   const top = c.nombreEnImagen ? 590 : 550
   const finColumnas = ALTO - 80 - altoPie
-  columnasClasico(ctx, c, turnos, top, finColumnas - top - 20)
+  columnasClasico(ctx, c, turnos, top, finColumnas - top - 20, fecha, bloqueos)
   pieClasico(ctx, contactos, finColumnas + 30)
   marcaDeAgua(ctx, ALTO - 58)
 }
 
-export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos, contactos: ContactoImagen[]): Promise<Blob> {
+export async function generarImagen(c: Complejo, fecha: string, turnos: MapaTurnos, contactos: ContactoImagen[], bloqueos: Bloqueo[] = []): Promise<Blob> {
   await prepararFuentes()
   const logo = await cargarImagen(logoUrl()).catch(() => null)
   const canvas = document.createElement('canvas')
   canvas.width = ANCHO
   canvas.height = ALTO
   const ctx = canvas.getContext('2d')!
-  dibujarClasico(ctx, c, fecha, turnos, logo, contactos)
+  dibujarClasico(ctx, c, fecha, turnos, logo, contactos, bloqueos)
   return new Promise((ok, mal) => canvas.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo generar la imagen'))), 'image/png'))
 }
 

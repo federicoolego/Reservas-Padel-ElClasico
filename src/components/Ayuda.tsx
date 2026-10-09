@@ -58,7 +58,7 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
           </Seccion>
 
           <Seccion titulo="Elegir complejo y día">
-            <p>Arriba elegís {b('El Clásico')} (BX1, BX2 y C1) o {b('El Clásico 2')}. Cada uno tiene tres pestañas: {b('Fijos')}, {b('Turnos')} e {b('Imagen')}.</p>
+            <p>Arriba elegís {b('El Clásico')} (BX1, BX2 y C1) o {b('El Clásico 2')}. Cada uno tiene cuatro pestañas: {b('Bloqueos')}, {b('Fijos')}, {b('Turnos')} e {b('Imagen')}.</p>
             <p>Con las flechas ‹ › pasás al día anterior o al siguiente. Para ir a una fecha puntual, tocá la fecha y se abre el calendario. El botón {b('Hoy')} te vuelve al día actual.</p>
           </Seccion>
 
@@ -68,6 +68,13 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
             <p>Abajo aparece un aviso con {b('Deshacer')} durante unos segundos, por si te equivocaste.</p>
             <p>Cada turno reservado muestra quién lo marcó y a qué hora. Los horarios que ya pasaron se ven más claros.</p>
             <p>Si otra persona reserva o libera un turno, lo ves al instante en tu pantalla, sin recargar.</p>
+          </Seccion>
+
+          <Seccion titulo="Bloqueos">
+            <p>En la pestaña {b('Bloqueos')} marcás lo que no se puede reservar: una cancha en reparación, un cumpleaños, un torneo. Elegís las canchas (o todas), las fechas, si es todo el día o qué turnos, y el motivo.</p>
+            <p>Si el bloqueo choca con reservas o turnos fijos, la app te muestra la lista de a quién avisar (con {b('Copiar lista')} para mandarla por WhatsApp). Al confirmar, esas reservas se liberan; de los fijos, solo esa fecha.</p>
+            <p>En la tabla, los turnos bloqueados se ven como {b('No disponible')} y no se pueden reservar. En la imagen salen con pelotita, y si una cancha está bloqueada todo el día, su columna muestra el motivo (por ejemplo {b('EN REPARACIÓN')}).</p>
+            <p>Si eliminás o achicás un bloqueo, los turnos vuelven a estar disponibles y los fijos se reservan solos.</p>
           </Seccion>
 
           <Seccion titulo="Turnos fijos">
