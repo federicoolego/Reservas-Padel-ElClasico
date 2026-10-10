@@ -100,7 +100,7 @@ export default function VistaBloqueos({ complejo, token, bloqueos, cargado, reca
             const m = MOTIVOS[b.motivo]
             return (
               <div key={b.id} className="flex gap-3 rounded-2xl border border-linea bg-white p-3">
-                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl ${b.motivo === 'evento' ? 'bg-pelota/35' : b.motivo === 'reparacion' ? 'bg-escudo/10' : 'bg-tinta/10'}`}>{m.icono}</span>
+                <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-xl ${b.motivo === 'reparacion' ? 'bg-escudo/10' : b.motivo === 'otro' ? 'bg-tinta/10' : 'bg-pelota/35'}`}>{m.icono}</span>
                 <div className="min-w-0 flex-1">
                   <p className="font-tablero text-xl font-extrabold leading-tight text-noche">
                     {textoCanchas(b.canchas, complejo.canchas)} · {m.texto}

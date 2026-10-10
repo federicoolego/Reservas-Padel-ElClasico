@@ -7,11 +7,13 @@ import { DIAS_HISTORIA } from '../config/limites'
 
 const TABLA = 'reservas_bloqueos'
 
-export type Motivo = 'reparacion' | 'evento' | 'otro'
+export type Motivo = 'reparacion' | 'evento' | 'torneo' | 'clases' | 'otro'
 
 export const MOTIVOS: Record<Motivo, { texto: string; icono: string; cartel: string }> = {
   reparacion: { texto: 'Reparación', icono: '🔧', cartel: 'EN REPARACIÓN' },
   evento: { texto: 'Evento', icono: '🎉', cartel: 'EVENTO PRIVADO' },
+  torneo: { texto: 'Torneo', icono: '🏆', cartel: 'TORNEO' },
+  clases: { texto: 'Clases', icono: '🎾', cartel: 'CLASES' },
   otro: { texto: 'Otro', icono: '📅', cartel: 'NO DISPONIBLE' },
 }
 
