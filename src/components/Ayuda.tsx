@@ -70,6 +70,12 @@ export default function Ayuda({ alCerrar }: { alCerrar: () => void }) {
             <p>Si otra persona reserva o libera un turno, lo ves al instante en tu pantalla, sin recargar.</p>
           </Seccion>
 
+          <Seccion titulo="Horarios">
+            <p>El ícono {b('⚙')}, junto a {b('Ayuda')}, abre los horarios de la grilla. Ahí podés agregar un horario nuevo o sacar uno, sin tocar código.</p>
+            <p>Si el horario que querés sacar tiene reservas, turnos fijos o bloqueos, te muestra la lista antes de confirmar: al eliminarlo, esas reservas se liberan, esos fijos se eliminan y a esos bloqueos se les saca ese horario.</p>
+            <p>Siempre tiene que quedar al menos un horario en la grilla.</p>
+          </Seccion>
+
           <Seccion titulo="Bloqueos">
             <p>En la pestaña {b('Bloqueos')} marcás lo que no se puede reservar: una cancha en reparación, un cumpleaños, un torneo. Elegís las canchas (o todas), las fechas, si es todo el día o qué turnos, y el motivo.</p>
             <p>Si el bloqueo choca con reservas o turnos fijos, la app te muestra la lista de a quién avisar (con {b('Copiar lista')} para mandarla por WhatsApp). Al confirmar, esas reservas se liberan; de los fijos, solo esa fecha.</p>

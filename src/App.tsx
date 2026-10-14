@@ -15,6 +15,8 @@ import VistaFijos from './components/VistaFijos'
 import { sincronizarFijos } from './lib/fijos'
 import { SesionVencida } from './lib/turnos'
 import Ayuda from './components/Ayuda'
+import VistaHorarios from './components/VistaHorarios'
+import { useHorarios } from './lib/horarios'
 
 type Pestana = 'bloqueos' | 'turnos' | 'fijos' | 'imagen'
 // Siempre arranca en El Clásico, pestaña Turnos, día de hoy
@@ -75,7 +77,11 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
   const [vista, setVista] = useState(VISTA_INICIAL)
   const [fecha, setFecha] = useState(hoyISO)
   const [ayuda, setAyuda] = useState(false)
-  const complejo = complejoPorId(vista.complejo)
+  const [horariosAbierto, setHorariosAbierto] = useState(false)
+  const complejoBase = complejoPorId(vista.complejo)
+  const { horarios, cargado: horariosCargados, recargar: recargarHorarios } = useHorarios(complejoBase.id)
+  // Mientras no cargaron los horarios de la base se usan los de complejos.ts, para no mostrar la grilla vacía
+  const complejo = horariosCargados && horarios.length ? { ...complejoBase, horarios } : complejoBase
   const { turnos, cargando, error, recargar, aplicarLocal } = useTurnos(fecha, complejo.id)
   const { bloqueos, cargado: bloqueosCargados, recargar: recargarBloqueos } = useBloqueos(complejo.id)
 
@@ -92,6 +98,8 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
           <img src={logoUrl()} alt="" className="h-11 w-auto" />
           <h1 className="flex-1 font-tablero text-3xl font-extrabold tracking-wide">Turnos</h1>
           <span className="hidden text-sm text-white/70 sm:inline">{sesion.nombre || sesion.usuario}</span>
+          <button onClick={() => setHorariosAbierto(true)} aria-label="Administrar horarios"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/30 text-lg">⚙</button>
           <button onClick={() => setAyuda(true)} className="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold">Ayuda</button>
           <button onClick={alSalir} className="rounded-full border border-white/30 px-3 py-1.5 text-sm font-semibold">Salir</button>
         </div>
@@ -147,6 +155,12 @@ function Principal({ sesion, alSalir, alVencer }: { sesion: Sesion; alSalir: () 
         )}
       </main>
       {ayuda && <Ayuda alCerrar={() => setAyuda(false)} />}
+      {horariosAbierto && (
+        <VistaHorarios token={sesion.token} complejo={complejoBase.id} complejoNombre={COMPLEJOS.length > 1 ? complejoBase.nombre : undefined}
+          horarios={horarios} cargado={horariosCargados}
+          alCerrar={() => setHorariosAbierto(false)} alVencerSesion={alVencer}
+          alCambiar={() => { recargarHorarios(); recargar() }} />
+      )}
     </div>
   )
 }
